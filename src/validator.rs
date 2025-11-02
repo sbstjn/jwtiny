@@ -114,7 +114,7 @@ impl SignatureVerification {
     fn key(&self) -> Result<&Key> {
         self.key
             .as_ref()
-            .ok_or_else(|| Error::MissingField("signature verification key".to_string()))
+            .ok_or_else(|| Error::MissingField("signature verification key".into()))
     }
 
     /// Get the algorithm policy
@@ -394,7 +394,7 @@ impl TokenValidator {
             #[cfg(feature = "remote")]
             if verification.has_jwks() {
                 return Err(Error::InvalidConfiguration(
-                    "JWKS-based signature verification requires run_async(), not run()".to_string(),
+                    "JWKS-based signature verification requires run_async(), not run()".into(),
                 ));
             }
         }
@@ -405,7 +405,7 @@ impl TokenValidator {
         } else {
             // If no issuer validator is provided, require explicit skip
             return Err(Error::MissingField(
-                "issuer validator (use ensure_issuer() or skip_issuer_check())".to_string(),
+                "issuer validator (use ensure_issuer() or skip_issuer_check())".into(),
             ));
         };
 
@@ -415,7 +415,7 @@ impl TokenValidator {
             trusted.verify_signature(key)?
         } else {
             return Err(Error::MissingField(
-                "signature verification (use verify_signature())".to_string(),
+                "signature verification (use verify_signature())".into(),
             ));
         };
 
@@ -486,7 +486,7 @@ impl TokenValidator {
             self.parsed.trust_issuer(|iss| validator(iss))?
         } else {
             return Err(Error::MissingField(
-                "issuer validator (use ensure_issuer() or skip_issuer_check())".to_string(),
+                "issuer validator (use ensure_issuer() or skip_issuer_check())".into(),
             ));
         };
 
@@ -501,9 +501,9 @@ impl TokenValidator {
         let verification = self
             .signature_verification
             .as_ref()
-            .ok_or_else(|| Error::MissingField("signature verification".to_string()))?;
+            .ok_or_else(|| Error::MissingField("signature verification".into()))?;
         let client = verification.http_client().ok_or_else(|| {
-            Error::InvalidConfiguration("HTTP client not configured for JWKS".to_string())
+            Error::InvalidConfiguration("HTTP client not configured for JWKS".into())
         })?;
         let use_cache = verification.use_cache();
 

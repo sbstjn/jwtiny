@@ -204,11 +204,38 @@ pub struct TokenValidator {
 impl TokenValidator {
     /// Create a new validator from a parsed token
     ///
+    /// **Note:** `TokenValidator` is not `Clone` by design. Each validator is bound
+    /// to a specific token to prevent accidental reuse with the wrong token data.
+    /// However, validation configurations (`SignatureVerification`, `ValidationConfig`)
+    /// are `Clone` and can be reused across multiple validators.
+    ///
     /// # Example
     ///
     /// ```ignore
     /// let token = ParsedToken::from_string("eyJ...")?;
     /// let validator = TokenValidator::new(token);
+    /// ```
+    ///
+    /// # Validating Multiple Tokens
+    ///
+    /// To validate multiple tokens with the same configuration:
+    ///
+    /// ```ignore
+    /// // Prepare reusable configuration
+    /// let signature = SignatureVerification::with_secret(b"secret");
+    /// let validation = ValidationConfig::default().require_audience("api");
+    /// let issuer_check = |iss: &str| Ok(iss == "https://trusted.com");
+    ///
+    /// // Validate each token with the same config
+    /// for token_str in tokens {
+    ///     let parsed = ParsedToken::from_string(&token_str)?;
+    ///     let token = TokenValidator::new(parsed)
+    ///         .ensure_issuer(issuer_check)
+    ///         .verify_signature(signature.clone())
+    ///         .validate_token(validation.clone())
+    ///         .run()?;
+    ///     // Use token...
+    /// }
     /// ```
     pub fn new(parsed: ParsedToken) -> Self {
         Self {

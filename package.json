@@ -1,0 +1,12 @@
+{
+  "name": "jwtiny",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A minimal, type-safe JWT validation library",
+  "author": "Sebastian Müller",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:sbstjn/jwtiny.git"
+  }
+}

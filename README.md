@@ -1,6 +1,6 @@
 # jwtiny
 
-[![crates.io](https://img.shields.io/crates/v/jwtiny-cli.svg)](https://crates.io/crates/jwtiny-cli)
+[![crates.io](https://img.shields.io/crates/v/jwtiny.svg)](https://crates.io/crates/jwtiny)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
 [![CI](https://github.com/sbstjn/jwtiny/actions/workflows/release.yml/badge.svg)](https://github.com/sbstjn/jwtiny/actions/workflows/release.yml)
 [![CI](https://github.com/sbstjn/jwtiny/actions/workflows/ci.yml/badge.svg)](https://github.com/sbstjn/jwtiny/actions/workflows/ci.yml)

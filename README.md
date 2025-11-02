@@ -9,6 +9,8 @@
 
 **jwtiny** validates JWT tokens through a builder-pattern API that attempts to enforce correct validation order at compile time. Initially created to explore `miniserde` support, it aims to prioritize safety, clarity, and zero-cost abstractions.
 
+> **Warning:** This is a learning project to get more familiar with Rust.
+
 ## Overview
 
 JWTs (JSON Web Tokens) encode claims as JSON objects secured by digital signatures or message authentication codes. Validating them requires parsing Base64URL-encoded segments, verifying signatures with cryptographic keys, and checking temporal claims like expiration.

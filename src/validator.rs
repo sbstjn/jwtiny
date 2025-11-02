@@ -196,7 +196,7 @@ impl Default for SignatureVerification {
 pub struct TokenValidator {
     parsed: ParsedToken,
     #[allow(clippy::type_complexity)]
-    issuer_validator: Option<Box<dyn FnOnce(&str) -> Result<()> + Send>>,
+    issuer_validator: Option<Box<dyn Fn(&str) -> Result<()> + Send + Sync>>,
     signature_verification: Option<SignatureVerification>,
     claims_validation: Option<ValidationConfig>,
 }
@@ -230,6 +230,11 @@ impl TokenValidator {
     /// - `Ok(())` if the issuer is trusted
     /// - `Err(...)` if the issuer is not trusted
     ///
+    /// # Note
+    ///
+    /// The validator function must be `Fn` (not `FnOnce`) and should not mutate
+    /// captured state. This allows the validator to be used multiple times if needed.
+    ///
     /// # Example
     ///
     /// ```ignore
@@ -243,7 +248,7 @@ impl TokenValidator {
     /// ```
     pub fn ensure_issuer<F>(mut self, validator: F) -> Self
     where
-        F: FnOnce(&str) -> Result<()> + Send + 'static,
+        F: Fn(&str) -> Result<()> + Send + Sync + 'static,
     {
         self.issuer_validator = Some(Box::new(validator));
         self
@@ -368,8 +373,8 @@ impl TokenValidator {
         }
 
         // Step 2: Validate issuer
-        let trusted = if let Some(validator) = self.issuer_validator {
-            self.parsed.trust_issuer(validator)?
+        let trusted = if let Some(ref validator) = self.issuer_validator {
+            self.parsed.trust_issuer(|iss| validator(iss))?
         } else {
             // If no issuer validator is provided, require explicit skip
             return Err(Error::MissingField(
@@ -450,8 +455,8 @@ impl TokenValidator {
         }
 
         // Step 2: Validate issuer
-        let trusted = if let Some(validator) = self.issuer_validator {
-            self.parsed.trust_issuer(validator)?
+        let trusted = if let Some(ref validator) = self.issuer_validator {
+            self.parsed.trust_issuer(|iss| validator(iss))?
         } else {
             return Err(Error::MissingField(
                 "issuer validator (use ensure_issuer() or skip_issuer_check())".to_string(),

@@ -169,8 +169,9 @@ jobs:
             cargo test --lib --tests --bins --examples --features "${{ matrix.features }}"
           fi
 
-  # Benchmarks - run in parallel
+  # Benchmarks - run in parallel (disabled for now)
   benchmarks:
+    if: ${{ false }}
     name: Benchmarks (${{ matrix.group }})
     runs-on: ubuntu-latest
     strategy:

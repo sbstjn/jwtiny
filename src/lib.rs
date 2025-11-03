@@ -511,7 +511,7 @@ mod integration_tests {
                         Err(Error::IssuerNotTrusted(iss.to_string()))
                     }
                 })
-                .verify_signature(SignatureVerification::with_secret(secret))
+                .verify_signature(SignatureVerification::with_secret_hs256(secret))
                 .validate_token(ValidationConfig::default())
                 .run();
 

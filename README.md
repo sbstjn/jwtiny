@@ -25,7 +25,7 @@ Per default, only `hmac` support is enabled. Everything else needs to be opt-in 
 
 | Feature | Feature | Description |
 |---------|---------|-------------|
-| `hmac` | ☑️ | HMAC algorithms (HS256, HS384, HS512) — **always enabled** |
+| `hmac` | **always enabled** | HMAC algorithms (HS256, HS384, HS512)  |
 | `rsa` | ✅ | RSA algorithms (RS256, RS384, RS512) |
 | `ecdsa` | ✅ | ECDSA algorithms (ES256, ES384) |
 | `aws-lc-rs` | ✅ | Use `aws-lc-rs` backend instead of `ring` for RSA/ECDSA |

@@ -69,7 +69,6 @@ run_benchmark() {
 echo -e "${MAGENTA}Running RSA benchmarks...${NC}"
 run_benchmark "rsa_signature_verification" "rsa" "RSA signature verification"
 run_benchmark "rsa_end_to_end" "rsa" "RSA end-to-end"
-run_benchmark "rsa_jsonwebtoken_comparison" "rsa" "RSA jsonwebtoken comparison"
 
 # HMAC Benchmarks
 echo ""

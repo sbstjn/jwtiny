@@ -182,7 +182,7 @@ jobs:
         include:
           - group: RSA
             features: "rsa"
-            benches: "rsa_end_to_end rsa_jsonwebtoken_comparison"
+            benches: "rsa_end_to_end rsa_signature_verification"
           - group: HMAC
             features: ""
             benches: "hmac_algorithms"

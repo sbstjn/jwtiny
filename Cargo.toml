@@ -57,8 +57,6 @@ serde_json = "1.0"
 # For benchmarking
 criterion = { version = "0.5", features = ["html_reports"] }
 base64 = "0.21"
-# For comparison benchmarks (only used in jsonwebtoken_comparison bench)
-jsonwebtoken = "9"
 
 [[example]]
 name = "basic"
@@ -75,9 +73,7 @@ harness = false
 name = "rsa_end_to_end"
 harness = false
 
-[[bench]]
-name = "rsa_jsonwebtoken_comparison"
-harness = false
+
 
 [[bench]]
 name = "hmac_algorithms"

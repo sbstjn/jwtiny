@@ -173,7 +173,7 @@ let parsed = ParsedToken::from_string(token_str)?;
 
 // Stage 2: Build the validation pipeline
 let token = TokenValidator::new(parsed)
-    .ensure_issuer(/* closure */)      // Required: validate issuer (or use .skip_issuer_check())
+    .ensure_issuer(/* closure */)      // Required: validate issuer (or use .danger_skip_issuer_validation())
     .verify_signature(/* config */)    // Required: verify signature
     .validate_token(/* config */)      // Optional: defaults to ValidationConfig::default() if omitted
     .run()?;                           // Execute all stages atomically
@@ -198,7 +198,7 @@ Always validate issuers when using JWKS to prevent SSRF attacks:
 })
 
 // For same-service tokens, explicitly skip
-.skip_issuer_check()
+.danger_skip_issuer_validation()
 ```
 
 ### Signature Verification
@@ -208,26 +208,25 @@ Choose verification based on the algorithm family:
 **HMAC (symmetric keys)** — always enabled:
 
 ```rust
-SignatureVerification::with_secret(b"your-256-bit-secret")
-    .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]))
+SignatureVerification::with_secret_hs256(b"your-256-bit-secret")
 ```
 
 **RSA (asymmetric keys)** — requires `rsa` feature:
 
 ```rust
-SignatureVerification::with_key(Key::rsa_public(public_key_der))
-    .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::RS256]))
+SignatureVerification::with_key(
+    Key::rsa_public(public_key_der),
+    AlgorithmPolicy::rs256_only(),
+)
 ```
 
 **ECDSA (asymmetric keys)** — requires `ecdsa` feature:
 
 ```rust
-SignatureVerification::with_key(
-    Key::ecdsa_public(public_key_der, EcdsaCurve::P256)
-)
+SignatureVerification::with_ecdsa_es256(public_key_der)
 ```
 
-**Algorithm restrictions are recommended** to prevent algorithm confusion. Without `.allow_algorithms()`, any algorithm matching the key type is accepted; with it, only explicitly allowed algorithms pass validation.
+**Algorithm restrictions are mandatory in 2.0**. Use algorithm-specific constructors (preferred) or pass an explicit `AlgorithmPolicy`.
 
 ### Claims Validation
 
@@ -300,7 +299,7 @@ When using JWKS, validate issuers before fetching keys:
 })
 
 // ❌ Incorrect: Attacker can make you fetch from any URL
-.skip_issuer_check()  // Dangerous with JWKS!
+.danger_skip_issuer_validation()  // Dangerous with JWKS!
 ```
 
 ### "none" Algorithm Rejection

@@ -101,6 +101,47 @@ jobs:
       - name: Build documentation
         run: cargo doc --no-deps --all-features
 
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - features: ""
+            name: Default
+          - features: "all-algorithms,remote"
+            name: All + Remote
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: rust
+          queries: +security-extended
+
+      - name: Build (manual)
+        run: |
+          if [ -z "${{ matrix.features }}" ]; then
+            cargo build --all-targets
+          else
+            cargo build --all-targets --features "${{ matrix.features }}"
+          fi
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
   # Comprehensive tests - run in parallel
   all-tests-tag:
     name: All Tests

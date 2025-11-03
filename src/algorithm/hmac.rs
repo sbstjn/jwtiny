@@ -3,9 +3,9 @@ use crate::error::{Error, Result};
 use crate::keys::Key;
 use crate::utils::base64url;
 
-use constant_time_eq::constant_time_eq;
 use hmac::{Hmac, Mac};
 use sha2::{Sha256, Sha384, Sha512};
+use subtle::ConstantTimeEq;
 
 /// HS256 algorithm (HMAC with SHA-256)
 pub struct HS256;
@@ -61,7 +61,7 @@ fn verify_hs256(signing_input: &str, signature: &str, secret: &[u8]) -> Result<(
         return Err(Error::SignatureInvalid);
     }
 
-    if constant_time_eq(&provided_signature, &expected_signature) {
+    if provided_signature.ct_eq(&expected_signature).into() {
         Ok(())
     } else {
         Err(Error::SignatureInvalid)
@@ -80,7 +80,7 @@ fn verify_hs384(signing_input: &str, signature: &str, secret: &[u8]) -> Result<(
         return Err(Error::SignatureInvalid);
     }
 
-    if constant_time_eq(&provided_signature, &expected_signature) {
+    if provided_signature.ct_eq(&expected_signature).into() {
         Ok(())
     } else {
         Err(Error::SignatureInvalid)
@@ -99,7 +99,7 @@ fn verify_hs512(signing_input: &str, signature: &str, secret: &[u8]) -> Result<(
         return Err(Error::SignatureInvalid);
     }
 
-    if constant_time_eq(&provided_signature, &expected_signature) {
+    if provided_signature.ct_eq(&expected_signature).into() {
         Ok(())
     } else {
         Err(Error::SignatureInvalid)

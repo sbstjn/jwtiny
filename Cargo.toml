@@ -2,7 +2,7 @@
 name = "jwtiny"
 version = "0.0.0"
 edition = "2021"
-rust-version = "1.85.1"
+rust-version = "1.68.2"
 authors = ["Sebastian Müller <c@sbstjn.com>"]
 description = "Minimal, type-safe JWT validation library"
 license = "MIT"
@@ -37,7 +37,7 @@ miniserde = "0.1"
 # HMAC algorithms (always enabled)
 hmac = "0.12"
 sha2 = "0.10"
-constant_time_eq = "0.4.2"
+subtle = "2.6"
 
 # RSA and ECDSA algorithms (optional)
 # Default backend: ring

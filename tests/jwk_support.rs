@@ -70,7 +70,7 @@ mod rsa_jwk_tests {
         let parsed = ParsedToken::from_string(&token_str).expect("parse failed");
 
         let result = TokenValidator::new(parsed)
-            .skip_issuer_check()
+            .danger_skip_issuer_validation()
             .verify_signature(SignatureVerification::with_key(Key::rsa_public(
                 public_key_der,
             )))
@@ -347,7 +347,7 @@ fn jwk_ecdsa_to_der_documentation() {}
 ///     // Use with jwtiny
 ///     let parsed = ParsedToken::from_string(token)?;
 ///     TokenValidator::new(parsed)
-///         .skip_issuer_check()
+///         .danger_skip_issuer_validation()
 ///         .verify_signature(SignatureVerification::with_key(
 ///             Key::rsa_public(der_bytes)
 ///         ))

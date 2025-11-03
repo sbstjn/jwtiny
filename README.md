@@ -55,12 +55,22 @@ let token = TokenValidator::new(
     ParsedToken::from_string(token_str)?
 )
     .ensure_issuer(|iss| Ok(iss == "https://trusted.com"))
-    .verify_signature(SignatureVerification::with_secret(b"secret"))
+    .verify_signature(SignatureVerification::with_secret_hs256(b"secret"))
     .validate_token(ValidationConfig::default())
     .run()?;
 
 println!("Subject: {:?}", token.subject());
 ```
+
+## ⚠️ Version 2.0 Breaking Changes
+
+Version 2.0 introduces important security improvements:
+
+1. **Algorithm policy is now mandatory** - Use algorithm-specific constructors like `with_secret_hs256()` or pass an explicit `AlgorithmPolicy`
+2. **Security-critical methods renamed** - `skip_issuer_check()` → `danger_skip_issuer_validation()` to make implications clear
+3. **JWKS requires explicit policy** - `with_jwks()` now requires an `AlgorithmPolicy` parameter
+
+See [`docs/SECURITY.md`](docs/SECURITY.md) for migration guide and security best practices.
 
 ## Examples
 
@@ -72,11 +82,8 @@ For tokens signed with symmetric keys (HS256, HS384, HS512):
 use jwtiny::*;
 
 let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
-    .skip_issuer_check()
-    .verify_signature(
-        SignatureVerification::with_secret(b"your-256-bit-secret")
-            .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]))
-    )
+    .danger_skip_issuer_validation() // Only if providing key directly
+    .verify_signature(SignatureVerification::with_secret_hs256(b"your-256-bit-secret"))
     .validate_token(ValidationConfig::default())
     .run()?;
 ```
@@ -90,10 +97,7 @@ use jwtiny::*;
 
 let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
     .ensure_issuer(|iss| Ok(iss == "https://auth.example.com"))
-    .verify_signature(
-        SignatureVerification::with_key(Key::rsa_public(public_key_der))
-            .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::RS256]))
-    )
+    .verify_signature(SignatureVerification::with_rsa_rs256(public_key_der))
     .validate_token(ValidationConfig::default())
     .run()?;
 ```
@@ -107,11 +111,7 @@ use jwtiny::*;
 
 let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
     .ensure_issuer(|iss| Ok(iss == "https://auth.example.com"))
-    .verify_signature(
-        SignatureVerification::with_key(
-            Key::ecdsa_public(public_key_der, EcdsaCurve::P256)
-        )
-    )
+    .verify_signature(SignatureVerification::with_ecdsa_es256(public_key_der))
     .validate_token(ValidationConfig::default())
     .run()?;
 ```
@@ -160,7 +160,11 @@ let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
         }
     })
     .verify_signature(
-        SignatureVerification::with_jwks(http_client, true) // use_cache = true
+        SignatureVerification::with_jwks(
+            http_client,
+            AlgorithmPolicy::recommended_asymmetric(), // RS256 + ES256
+            true  // use_cache
+        )
     )
     .validate_token(ValidationConfig::default())
     .run_async()

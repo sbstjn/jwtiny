@@ -36,7 +36,7 @@ fn main() -> Result<()> {
             }
         })
         // Configure signature verification
-        .verify_signature(SignatureVerification::with_secret(
+        .verify_signature(SignatureVerification::with_secret_hs256(
             b"your-256-bit-secret-key-here!",
         ))
         // Configure claims validation

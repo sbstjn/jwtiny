@@ -237,7 +237,7 @@ mod rsa_key_formats {
         // Verify with PKCS#8 DER
         let parsed1 = ParsedToken::from_string(&token_str).unwrap();
         let result1 = TokenValidator::new(parsed1)
-            .skip_issuer_check()
+            .danger_skip_issuer_validation()
             .verify_signature(SignatureVerification::with_key(Key::rsa_public(
                 pkcs8_der.as_bytes(),
             )))
@@ -247,7 +247,7 @@ mod rsa_key_formats {
         // Verify with PKCS#1 DER
         let parsed2 = ParsedToken::from_string(&token_str).unwrap();
         let result2 = TokenValidator::new(parsed2)
-            .skip_issuer_check()
+            .danger_skip_issuer_validation()
             .verify_signature(SignatureVerification::with_key(Key::rsa_public(
                 pkcs1_der.as_bytes(),
             )))
@@ -332,7 +332,7 @@ mod key_format_errors {
         let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
         let parsed = ParsedToken::from_string(&token).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
 
         // Try to create key with invalid DER
         let key = Key::rsa_public(invalid_der);
@@ -354,7 +354,7 @@ mod key_format_errors {
         let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
         let parsed = ParsedToken::from_string(&token).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
 
         // Try to create key with empty data
         let key = Key::rsa_public(empty_der);
@@ -377,7 +377,7 @@ mod key_format_errors {
         let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
         let parsed = ParsedToken::from_string(&token).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
 
         // Try to create key with truncated DER
         let key = Key::rsa_public(truncated_der);

@@ -36,7 +36,7 @@ mod jwtio_hmac_tests {
 
         // For tokens without an issuer field, we need to use the lower-level API
         // The builder API expects an issuer to be present
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
         let key = Key::symmetric(secret);
         let verified = trusted
             .verify_signature(&key)
@@ -108,7 +108,7 @@ mod jwtio_hmac_tests {
         let parsed = ParsedToken::from_string(&token).expect("should parse without typ");
 
         // Use lower-level API for tokens without issuer
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
         let key = Key::symmetric(secret);
         let verified = trusted
             .verify_signature(&key)
@@ -223,7 +223,7 @@ mod jwtio_rsa_tests {
         let parsed = ParsedToken::from_string(&token).expect("should parse");
 
         // RSA tokens need to be verified using the lower-level API if they don't have an issuer
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
         let key = Key::rsa_public(public_key_der);
         let verified = trusted
             .verify_signature(&key)
@@ -389,7 +389,7 @@ fn test_minimal_valid_token() {
     let parsed = ParsedToken::from_string(&token).expect("should parse minimal token");
 
     // Use lower-level API for tokens without issuer
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted
         .verify_signature(&key)

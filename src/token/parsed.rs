@@ -132,16 +132,23 @@ impl ParsedToken {
         Ok(TrustedToken::new(self, issuer.to_string()))
     }
 
-    /// Alternative: Trust without issuer check (use with caution!)
+    /// ⚠️ DANGER: Trust without issuer validation (use with extreme caution!)
     ///
-    /// This skips issuer validation. Only use this if you're providing
-    /// the signing key directly and not fetching it based on the token.
+    /// This skips issuer validation, which is a **critical security check**.
+    /// Only use this if you're providing the signing key directly and not
+    /// fetching it based on the token.
     ///
-    /// For JWKS-based validation, you MUST use trust_issuer() instead.
+    /// # Security Warning
     ///
-    /// Note: This method sets issuer to an empty string since it's not validated.
-    /// If you need the issuer later, use `trust_issuer()` instead.
-    pub fn trust_without_issuer_check(self) -> TrustedToken {
+    /// For JWKS-based validation, you MUST use `trust_issuer()` instead.
+    /// Skipping issuer validation with JWKS enables SSRF attacks.
+    ///
+    /// Note: This method attempts to extract the issuer for convenience,
+    /// but does NOT validate it. If you need the issuer, use `trust_issuer()`.
+    ///
+    /// The method name includes "danger" to make it clear this is a security-critical
+    /// bypass that should only be used in specific, well-understood scenarios.
+    pub fn danger_trust_without_issuer_check(self) -> TrustedToken {
         // Try to extract issuer for convenience, but don't validate
         #[derive(miniserde::Deserialize)]
         struct IssuerClaim {

@@ -139,7 +139,7 @@
 //!
 //! ### Timing Attack Protection
 //!
-//! HMAC signature verification uses constant-time comparison via the [`subtle`](https://crates.io/crates/subtle)
+//! HMAC signature verification uses constant-time comparison via the [`constant_time_eq`](https://crates.io/crates/constant_time_eq)
 //! crate, preventing timing-based key recovery attacks.
 //!
 //! ## References
@@ -300,7 +300,7 @@ mod integration_tests {
         );
 
         let parsed = ParsedToken::from_string(&token_str).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
 
         let key = Key::symmetric(b"secret");
         let result = trusted.verify_signature(&key);
@@ -335,7 +335,7 @@ mod integration_tests {
         let token_str = format!("{}.{}", signing_input, signature_b64);
 
         let parsed = ParsedToken::from_string(&token_str).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
         let key = Key::symmetric(secret);
         let verified = trusted.verify_signature(&key).unwrap();
 

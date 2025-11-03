@@ -425,7 +425,7 @@ fn test_expired_token_edge_cases() {
     let token = create_token_with_payload(&payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
 
     // With zero skew, expired 1 second ago should fail
@@ -436,7 +436,7 @@ fn test_expired_token_edge_cases() {
 
     // With default 60s skew, expired 1 second ago should pass
     let parsed2 = ParsedToken::from_string(&token).unwrap();
-    let trusted2 = parsed2.trust_without_issuer_check();
+    let trusted2 = parsed2.danger_trust_without_issuer_check();
     let verified2 = trusted2.verify_signature(&key).unwrap();
     let config_default = ValidationConfig::default();
     assert!(
@@ -453,7 +453,7 @@ fn test_invalid_exp_values() {
     let payload = r#"{"exp":-1}"#;
     let token = create_token_with_payload(payload, secret);
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted.verify_signature(&key).unwrap();
 
@@ -480,7 +480,7 @@ fn test_invalid_iat_values() {
     let token = create_token_with_payload(&payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted.verify_signature(&key).unwrap();
 
@@ -509,7 +509,7 @@ fn test_nbf_edge_cases() {
     let token = create_token_with_payload(&payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted.verify_signature(&key).unwrap();
 
@@ -530,7 +530,7 @@ fn test_audience_edge_cases() {
     let token = create_token_with_payload(payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted.verify_signature(&key).unwrap();
 
@@ -546,7 +546,7 @@ fn test_audience_edge_cases() {
     let token = create_token_with_payload(payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let verified = trusted.verify_signature(&key).unwrap();
 
     // Should fail - audience doesn't match
@@ -633,7 +633,7 @@ fn test_large_timestamps() {
     let token = create_token_with_payload(&payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted.verify_signature(&key).unwrap();
 
@@ -652,7 +652,7 @@ fn test_negative_timestamps() {
     let token = create_token_with_payload(payload, secret);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let key = Key::symmetric(secret);
     let verified = trusted.verify_signature(&key).unwrap();
 
@@ -800,7 +800,7 @@ fn test_rsa_algorithm_with_hmac_key() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Try to verify with HMAC key (should fail - key type mismatch)
     let hmac_key = Key::symmetric(b"secret");
@@ -832,7 +832,7 @@ fn test_hmac_algorithm_with_rsa_key() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Try to verify with RSA key (should fail - key type mismatch)
     let rsa_key = Key::rsa_public(public_key_der.as_bytes());
@@ -855,7 +855,7 @@ fn test_rsa_algorithm_with_ecdsa_key() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Create a test ECDSA P-256 public key (minimal valid DER-encoded key)
     // For testing purposes, we'll use a placeholder that represents ECDSA key structure
@@ -890,7 +890,7 @@ fn test_ecdsa_algorithm_with_rsa_key() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Try to verify with RSA key (should fail - key type mismatch)
     let rsa_key = Key::rsa_public(public_key_der.as_bytes());
@@ -913,7 +913,7 @@ fn test_ecdsa_algorithm_with_hmac_key() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Try to verify with HMAC key (should fail - key type mismatch)
     let hmac_key = Key::symmetric(b"secret");
@@ -936,7 +936,7 @@ fn test_hmac_algorithm_with_ecdsa_key() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Create a test ECDSA key
     let ecdsa_key = Key::ecdsa_public(&[0x30, 0x59], jwtiny::keys::EcdsaCurve::P256);
@@ -969,7 +969,7 @@ fn test_algorithm_confusion_different_rsa_variants() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Verification with RS256 should proceed (may fail on signature, but algorithm matches)
     let rsa_key = Key::rsa_public(public_key_der.as_bytes());
@@ -995,7 +995,7 @@ fn test_algorithm_key_mismatch() {
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
     let parsed = ParsedToken::from_string(&token).unwrap();
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
 
     // Try to verify with HMAC key (should fail - key type mismatch)
     let hmac_key = Key::symmetric(b"secret");

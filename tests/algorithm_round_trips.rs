@@ -59,7 +59,7 @@ mod hmac_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(secret))
+            .verify_signature(SignatureVerification::with_secret(secret, AlgorithmPolicy::hs256_only()))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -109,7 +109,7 @@ mod hmac_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(secret))
+            .verify_signature(SignatureVerification::with_secret(secret, AlgorithmPolicy::hs384_only()))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -158,7 +158,7 @@ mod hmac_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(secret))
+            .verify_signature(SignatureVerification::with_secret(secret, AlgorithmPolicy::hs512_only()))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -371,7 +371,7 @@ mod cross_algorithm_tests {
         // Should succeed with HS256 in allow list
         let parsed = ParsedToken::from_string(&token_str).unwrap();
         let result = TokenValidator::new(parsed)
-            .skip_issuer_check()
+            .danger_skip_issuer_validation()
             .verify_signature(
                 SignatureVerification::with_secret(secret)
                     .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256])),
@@ -383,7 +383,7 @@ mod cross_algorithm_tests {
         // Should fail with only HS384 in allow list
         let parsed = ParsedToken::from_string(&token_str).unwrap();
         let result = TokenValidator::new(parsed)
-            .skip_issuer_check()
+            .danger_skip_issuer_validation()
             .verify_signature(
                 SignatureVerification::with_secret(secret)
                     .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS384])),

@@ -145,7 +145,7 @@ fn test_algorithm_policy() -> Result<()> {
 fn validate_token(token_str: &str, key: &Key, expected_alg: &str) -> Result<()> {
     let parsed = ParsedToken::from_string(token_str)?;
 
-    let trusted = parsed.trust_without_issuer_check();
+    let trusted = parsed.danger_trust_without_issuer_check();
     let verified = trusted.verify_signature(key)?;
     let validated = verified.validate(&ValidationConfig::default().no_iat_validation())?;
 

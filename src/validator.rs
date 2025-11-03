@@ -26,12 +26,26 @@ use std::sync::Arc;
 /// - **Asymmetric public key** (for RSA/ECDSA algorithms: RS256, ES256, etc.)
 /// - **HTTP client for JWKS fetching** (for RSA/ECDSA with remote keys)
 ///
-/// Algorithm restrictions are recommended to prevent algorithm confusion
-/// attacks. See [`allow_algorithms`](Self::allow_algorithms) for details.
+/// # Security: Algorithm Policy Required
+///
+/// As of version 2.0, an explicit algorithm policy is **required** to prevent
+/// algorithm confusion attacks. Use algorithm-specific constructors like
+/// [`with_secret_hs256`](Self::with_secret_hs256) for convenience, or use
+/// [`with_secret`](Self::with_secret) with an explicit policy.
+///
+/// # Examples
+///
+/// ```ignore
+/// // Recommended: Use algorithm-specific constructor
+/// SignatureVerification::with_secret_hs256(b"secret")
+///
+/// // Alternative: Explicit policy
+/// SignatureVerification::with_secret(b"secret", AlgorithmPolicy::hs256_only())
+/// ```
 #[derive(Clone)]
 pub struct SignatureVerification {
     key: Option<Key>,
-    algorithm_policy: Option<AlgorithmPolicy>,
+    algorithm_policy: AlgorithmPolicy,
     #[cfg(feature = "remote")]
     http_client: Option<Arc<crate::remote::http::HttpClient>>,
     #[cfg(feature = "remote")]
@@ -39,11 +53,26 @@ pub struct SignatureVerification {
 }
 
 impl SignatureVerification {
-    /// Verify using a symmetric key (HMAC algorithms)
-    pub fn with_secret(secret: &[u8]) -> Self {
+    /// Verify using a symmetric key (HMAC algorithms) with explicit policy
+    ///
+    /// # Security
+    ///
+    /// You **must** specify which HMAC algorithm(s) to accept. Using multiple
+    /// HMAC variants (HS256, HS384, HS512) with the same key is not recommended.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // Recommended: Accept only HS256
+    /// SignatureVerification::with_secret(b"secret", AlgorithmPolicy::hs256_only())
+    ///
+    /// // Or use the convenience constructor:
+    /// SignatureVerification::with_secret_hs256(b"secret")
+    /// ```
+    pub fn with_secret(secret: &[u8], policy: AlgorithmPolicy) -> Self {
         Self {
             key: Some(Key::symmetric(secret)),
-            algorithm_policy: None,
+            algorithm_policy: policy,
             #[cfg(feature = "remote")]
             http_client: None,
             #[cfg(feature = "remote")]
@@ -51,16 +80,98 @@ impl SignatureVerification {
         }
     }
 
-    /// Verify using a public key (RSA/ECDSA algorithms)
-    pub fn with_key(key: Key) -> Self {
+    /// Verify using HS256 (HMAC with SHA-256) - Convenience constructor
+    ///
+    /// This is the most common HMAC algorithm and the recommended choice for
+    /// symmetric key validation.
+    ///
+    /// Equivalent to: `with_secret(secret, AlgorithmPolicy::hs256_only())`
+    pub fn with_secret_hs256(secret: &[u8]) -> Self {
+        Self::with_secret(secret, AlgorithmPolicy::hs256_only())
+    }
+
+    /// Verify using HS384 (HMAC with SHA-384) - Convenience constructor
+    ///
+    /// Equivalent to: `with_secret(secret, AlgorithmPolicy::hs384_only())`
+    pub fn with_secret_hs384(secret: &[u8]) -> Self {
+        Self::with_secret(secret, AlgorithmPolicy::hs384_only())
+    }
+
+    /// Verify using HS512 (HMAC with SHA-512) - Convenience constructor
+    ///
+    /// Equivalent to: `with_secret(secret, AlgorithmPolicy::hs512_only())`
+    pub fn with_secret_hs512(secret: &[u8]) -> Self {
+        Self::with_secret(secret, AlgorithmPolicy::hs512_only())
+    }
+
+    /// Verify using a public key (RSA/ECDSA algorithms) with explicit policy
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // Explicit policy
+    /// SignatureVerification::with_key(
+    ///     Key::rsa_public(der_bytes),
+    ///     AlgorithmPolicy::rs256_only()
+    /// )
+    ///
+    /// // Or use convenience constructors:
+    /// SignatureVerification::with_rsa_rs256(der_bytes)
+    /// SignatureVerification::with_ecdsa_es256(der_bytes)
+    /// ```
+    pub fn with_key(key: Key, policy: AlgorithmPolicy) -> Self {
         Self {
             key: Some(key),
-            algorithm_policy: None,
+            algorithm_policy: policy,
             #[cfg(feature = "remote")]
             http_client: None,
             #[cfg(feature = "remote")]
             use_cache: true,
         }
+    }
+
+    /// Verify using RS256 (RSA with SHA-256) - Convenience constructor
+    ///
+    /// This is the most common RSA algorithm.
+    ///
+    /// Equivalent to: `with_key(Key::rsa_public(der), AlgorithmPolicy::rs256_only())`
+    #[cfg(feature = "rsa")]
+    pub fn with_rsa_rs256(public_key_der: &[u8]) -> Self {
+        Self::with_key(Key::rsa_public(public_key_der), AlgorithmPolicy::rs256_only())
+    }
+
+    /// Verify using RS384 (RSA with SHA-384) - Convenience constructor
+    #[cfg(feature = "rsa")]
+    pub fn with_rsa_rs384(public_key_der: &[u8]) -> Self {
+        Self::with_key(Key::rsa_public(public_key_der), AlgorithmPolicy::rs384_only())
+    }
+
+    /// Verify using RS512 (RSA with SHA-512) - Convenience constructor
+    #[cfg(feature = "rsa")]
+    pub fn with_rsa_rs512(public_key_der: &[u8]) -> Self {
+        Self::with_key(Key::rsa_public(public_key_der), AlgorithmPolicy::rs512_only())
+    }
+
+    /// Verify using ES256 (ECDSA with P-256 and SHA-256) - Convenience constructor
+    ///
+    /// This is the most common ECDSA algorithm.
+    ///
+    /// Equivalent to: `with_key(Key::ecdsa_public(...), AlgorithmPolicy::es256_only())`
+    #[cfg(feature = "ecdsa")]
+    pub fn with_ecdsa_es256(public_key_der: &[u8]) -> Self {
+        Self::with_key(
+            Key::ecdsa_public(public_key_der, crate::keys::EcdsaCurve::P256),
+            AlgorithmPolicy::es256_only(),
+        )
+    }
+
+    /// Verify using ES384 (ECDSA with P-384 and SHA-384) - Convenience constructor
+    #[cfg(feature = "ecdsa")]
+    pub fn with_ecdsa_es384(public_key_der: &[u8]) -> Self {
+        Self::with_key(
+            Key::ecdsa_public(public_key_der, crate::keys::EcdsaCurve::P384),
+            AlgorithmPolicy::es384_only(),
+        )
     }
 
     /// Verify using JWKS (automatic key fetching from remote issuer)
@@ -68,9 +179,16 @@ impl SignatureVerification {
     /// This configures signature verification to use JWKS fetching.
     /// The HTTP client will be used to fetch keys from the issuer's JWKS endpoint.
     ///
+    /// # Security
+    ///
+    /// You must specify an algorithm policy when using JWKS. For most use cases,
+    /// [`AlgorithmPolicy::recommended_asymmetric()`](AlgorithmPolicy::recommended_asymmetric)
+    /// is a good choice (RS256 + ES256).
+    ///
     /// # Arguments
     ///
     /// * `client` - HTTP client for fetching JWKS (must implement `HttpClient` trait)
+    /// * `policy` - Algorithm policy (which algorithms to accept)
     /// * `use_cache` - Whether to use cached discovery and JWKS documents (default: `true`)
     ///
     /// # Example
@@ -78,36 +196,27 @@ impl SignatureVerification {
     /// ```ignore
     /// let token = TokenValidator::new(parsed)
     ///     .verify_signature(
-    ///         SignatureVerification::with_jwks(http_client, true)
+    ///         SignatureVerification::with_jwks(
+    ///             http_client,
+    ///             AlgorithmPolicy::recommended_asymmetric(),
+    ///             true
+    ///         )
     ///     )
     ///     .run_async()
     ///     .await?;
     /// ```
     #[cfg(feature = "remote")]
-    pub fn with_jwks(client: crate::remote::http::HttpClient, use_cache: bool) -> Self {
+    pub fn with_jwks(
+        client: crate::remote::http::HttpClient,
+        policy: AlgorithmPolicy,
+        use_cache: bool,
+    ) -> Self {
         Self {
             key: None,
-            algorithm_policy: None,
+            algorithm_policy: policy,
             http_client: Some(Arc::new(client)),
             use_cache,
         }
-    }
-
-    /// Restrict which algorithms are allowed (recommended)
-    ///
-    /// This prevents algorithm confusion attacks by only allowing algorithms you
-    /// explicitly trust. Without restrictions, a token declaring `RS256` might be
-    /// accepted when you only intended to allow `HS256`.
-    ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// SignatureVerification::with_secret(b"secret")
-    ///     .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]))
-    /// ```
-    pub fn allow_algorithms(mut self, policy: AlgorithmPolicy) -> Self {
-        self.algorithm_policy = Some(policy);
-        self
     }
 
     /// Get the key for verification (direct key, not JWKS)
@@ -118,8 +227,8 @@ impl SignatureVerification {
     }
 
     /// Get the algorithm policy
-    fn policy(&self) -> Option<&AlgorithmPolicy> {
-        self.algorithm_policy.as_ref()
+    fn policy(&self) -> &AlgorithmPolicy {
+        &self.algorithm_policy
     }
 
     /// Check if JWKS is configured (has HTTP client)
@@ -138,19 +247,6 @@ impl SignatureVerification {
     #[cfg(feature = "remote")]
     fn use_cache(&self) -> bool {
         self.use_cache
-    }
-}
-
-impl Default for SignatureVerification {
-    fn default() -> Self {
-        Self {
-            key: None,
-            algorithm_policy: None,
-            #[cfg(feature = "remote")]
-            http_client: None,
-            #[cfg(feature = "remote")]
-            use_cache: true,
-        }
     }
 }
 
@@ -183,7 +279,7 @@ impl Default for SignatureVerification {
 ///         }
 ///     })
 ///     .verify_signature(
-///         SignatureVerification::with_secret(b"my-secret")
+///         SignatureVerification::with_secret_hs256(b"my-secret")
 ///     )
 ///     .validate_token(
 ///         ValidationConfig::default()
@@ -222,7 +318,7 @@ impl TokenValidator {
     ///
     /// ```ignore
     /// // Prepare reusable configuration
-    /// let signature = SignatureVerification::with_secret(b"secret");
+    /// let signature = SignatureVerification::with_secret_hs256(b"secret");
     /// let validation = ValidationConfig::default().require_audience("api");
     /// let issuer_check = |iss: &str| Ok(iss == "https://trusted.com");
     ///
@@ -281,15 +377,23 @@ impl TokenValidator {
         self
     }
 
-    /// Skip issuer validation (use with caution!)
+    /// ⚠️ DANGER: Skip issuer validation (use with extreme caution!)
     ///
-    /// Skips the issuer validation step. Only use this if:
+    /// This bypasses issuer validation, which is a **critical security check**.
+    /// Only use this if:
     /// - You're providing the signing key directly (not fetching from JWKS)
     /// - You're validating the issuer through other means
+    /// - You fully understand the security implications
     ///
-    /// **Never skip issuer validation when using JWKS**, as this enables SSRF
-    /// attacks. For JWKS-based validation, you MUST use `ensure_issuer()`.
-    pub fn skip_issuer_check(mut self) -> Self {
+    /// # Security Warning
+    ///
+    /// **NEVER skip issuer validation when using JWKS!** This enables SSRF attacks
+    /// where attackers can make your application fetch keys from arbitrary URLs.
+    /// For JWKS-based validation, you MUST use `ensure_issuer()`.
+    ///
+    /// The method name includes "danger" to make it clear this is a security-critical
+    /// bypass that should only be used in specific, well-understood scenarios.
+    pub fn danger_skip_issuer_validation(mut self) -> Self {
         self.issuer_validator = Some(Box::new(|_| Ok(())));
         self
     }
@@ -304,20 +408,22 @@ impl TokenValidator {
     /// # Example
     ///
     /// ```ignore
-    /// // With symmetric key (HMAC)
+    /// // With symmetric key (HMAC) - algorithm-specific constructor
     /// validator.verify_signature(
-    ///     SignatureVerification::with_secret(b"my-secret")
+    ///     SignatureVerification::with_secret_hs256(b"my-secret")
     /// )
     ///
-    /// // With public key (RSA)
+    /// // With public key (RSA) - must specify policy
     /// validator.verify_signature(
-    ///     SignatureVerification::with_key(Key::rsa_public(der_bytes))
+    ///     SignatureVerification::with_key(
+    ///         Key::rsa_public(der_bytes),
+    ///         AlgorithmPolicy::rs256_only()
+    ///     )
     /// )
     ///
-    /// // With algorithm restrictions
+    /// // Or use convenience constructor for RSA
     /// validator.verify_signature(
-    ///     SignatureVerification::with_secret(b"secret")
-    ///         .allow_algorithms(AlgorithmPolicy::allow_only(&[AlgorithmId::HS256]))
+    ///     SignatureVerification::with_rsa_rs256(der_bytes)
     /// )
     /// ```
     pub fn verify_signature(mut self, verification: SignatureVerification) -> Self {
@@ -348,11 +454,22 @@ impl TokenValidator {
         self
     }
 
-    /// Skip claims validation (use with caution!)
+    /// ⚠️ DANGER: Skip claims validation (use with extreme caution!)
     ///
-    /// This skips the claims validation step. Only use this if you're
-    /// performing custom validation on the claims yourself.
-    pub fn skip_claims_validation(mut self) -> Self {
+    /// This bypasses claims validation, including critical checks like:
+    /// - Token expiration (`exp`)
+    /// - Not-before time (`nbf`)
+    /// - Audience (`aud`)
+    ///
+    /// # Security Warning
+    ///
+    /// Skipping claims validation means you accept **expired** or **not-yet-valid** tokens.
+    /// Only use this if you're performing custom validation on the claims yourself
+    /// and you fully understand the security implications.
+    ///
+    /// The method name includes "danger" to make it clear this is a security-critical
+    /// bypass that should only be used in specific, well-understood scenarios.
+    pub fn danger_skip_claims_validation(mut self) -> Self {
         self.claims_validation = Some(ValidationConfig::default().skip_all());
         self
     }
@@ -383,12 +500,10 @@ impl TokenValidator {
     /// println!("Token validated! Subject: {:?}", token.subject());
     /// ```
     pub fn run(self) -> Result<Token> {
-        // Step 1: Validate algorithm policy (if configured)
+        // Step 1: Validate algorithm policy
         if let Some(ref verification) = self.signature_verification {
-            if let Some(policy) = verification.policy() {
-                let algorithm = self.parsed.algorithm()?;
-                policy.validate(&algorithm)?;
-            }
+            let algorithm = self.parsed.algorithm()?;
+            verification.policy().validate(&algorithm)?;
 
             // Check if JWKS is configured - if so, must use run_async()
             #[cfg(feature = "remote")]
@@ -405,7 +520,7 @@ impl TokenValidator {
         } else {
             // If no issuer validator is provided, require explicit skip
             return Err(Error::MissingField(
-                "issuer validator (use ensure_issuer() or skip_issuer_check())".into(),
+                "issuer validator (use ensure_issuer() or danger_skip_issuer_validation())".into(),
             ));
         };
 
@@ -473,12 +588,10 @@ impl TokenValidator {
             return self.run();
         }
 
-        // Step 1: Validate algorithm policy (if configured)
+        // Step 1: Validate algorithm policy
         if let Some(ref verification) = self.signature_verification {
-            if let Some(policy) = verification.policy() {
-                let algorithm = self.parsed.algorithm()?;
-                policy.validate(&algorithm)?;
-            }
+            let algorithm = self.parsed.algorithm()?;
+            verification.policy().validate(&algorithm)?;
         }
 
         // Step 2: Validate issuer
@@ -486,7 +599,7 @@ impl TokenValidator {
             self.parsed.trust_issuer(|iss| validator(iss))?
         } else {
             return Err(Error::MissingField(
-                "issuer validator (use ensure_issuer() or skip_issuer_check())".into(),
+                "issuer validator (use ensure_issuer() or danger_skip_issuer_validation())".into(),
             ));
         };
 
@@ -573,7 +686,7 @@ mod tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(b"test-secret"))
+            .verify_signature(SignatureVerification::with_secret_hs256(b"test-secret"))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -596,7 +709,7 @@ mod tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(b"test-secret"))
+            .verify_signature(SignatureVerification::with_secret_hs256(b"test-secret"))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -610,7 +723,7 @@ mod tests {
 
         let result = TokenValidator::new(parsed)
             .ensure_issuer(|_| Ok(()))
-            .verify_signature(SignatureVerification::with_secret(b"wrong-secret"))
+            .verify_signature(SignatureVerification::with_secret_hs256(b"wrong-secret"))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -624,13 +737,10 @@ mod tests {
         let token_str = create_test_token();
         let parsed = ParsedToken::from_string(&token_str).unwrap();
 
-        // Should succeed with HS256 allowed
+        // Should succeed with HS256 (already restricted by with_secret_hs256)
         let result = TokenValidator::new(parsed)
             .ensure_issuer(|_| Ok(()))
-            .verify_signature(
-                SignatureVerification::with_secret(b"test-secret")
-                    .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256])),
-            )
+            .verify_signature(SignatureVerification::with_secret_hs256(b"test-secret"))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -645,12 +755,11 @@ mod tests {
         let token_str = create_test_token();
         let parsed = ParsedToken::from_string(&token_str).unwrap();
 
-        // Should fail with only RS256 allowed
+        // Should fail with only RS256 allowed (token is HS256, but policy only allows RS256)
         let result = TokenValidator::new(parsed)
             .ensure_issuer(|_| Ok(()))
             .verify_signature(
-                SignatureVerification::with_secret(b"test-secret")
-                    .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::RS256])),
+                SignatureVerification::with_secret(b"test-secret", AlgorithmPolicy::rs256_only())
             )
             .validate_token(ValidationConfig::default())
             .run();
@@ -665,7 +774,7 @@ mod tests {
 
         // Should fail without issuer validator
         let result = TokenValidator::new(parsed)
-            .verify_signature(SignatureVerification::with_secret(b"test-secret"))
+            .verify_signature(SignatureVerification::with_secret_hs256(b"test-secret"))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -687,13 +796,13 @@ mod tests {
     }
 
     #[test]
-    fn test_skip_issuer_check() {
+    fn test_danger_skip_issuer_validation() {
         let token_str = create_test_token();
         let parsed = ParsedToken::from_string(&token_str).unwrap();
 
         let result = TokenValidator::new(parsed)
-            .skip_issuer_check()
-            .verify_signature(SignatureVerification::with_secret(b"test-secret"))
+            .danger_skip_issuer_validation()
+            .verify_signature(SignatureVerification::with_secret_hs256(b"test-secret"))
             .validate_token(ValidationConfig::default())
             .run();
 

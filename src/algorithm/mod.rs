@@ -159,6 +159,105 @@ impl AlgorithmPolicy {
         Self { allowed }
     }
 
+    /// Policy that allows only HS256
+    ///
+    /// This is the recommended policy for HMAC-based validation when you control
+    /// the signing key and algorithm.
+    pub fn hs256_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::HS256])
+    }
+
+    /// Policy that allows only HS384
+    pub fn hs384_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::HS384])
+    }
+
+    /// Policy that allows only HS512
+    pub fn hs512_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::HS512])
+    }
+
+    /// Policy that allows any HMAC algorithm (HS256, HS384, HS512)
+    ///
+    /// # Security Warning
+    ///
+    /// Using multiple HMAC variants with the same key is not recommended.
+    /// Prefer algorithm-specific policies like [`hs256_only()`](Self::hs256_only).
+    pub fn hmac_any() -> Self {
+        Self::allow_only(vec![
+            AlgorithmId::HS256,
+            AlgorithmId::HS384,
+            AlgorithmId::HS512,
+        ])
+    }
+
+    /// Policy that allows only RS256
+    ///
+    /// This is the recommended policy for RSA-based validation.
+    #[cfg(feature = "rsa")]
+    pub fn rs256_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::RS256])
+    }
+
+    /// Policy that allows only RS384
+    #[cfg(feature = "rsa")]
+    pub fn rs384_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::RS384])
+    }
+
+    /// Policy that allows only RS512
+    #[cfg(feature = "rsa")]
+    pub fn rs512_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::RS512])
+    }
+
+    /// Policy that allows any RSA algorithm (RS256, RS384, RS512)
+    #[cfg(feature = "rsa")]
+    pub fn rsa_any() -> Self {
+        Self::allow_only(vec![
+            AlgorithmId::RS256,
+            AlgorithmId::RS384,
+            AlgorithmId::RS512,
+        ])
+    }
+
+    /// Policy that allows only ES256 (ECDSA with P-256)
+    ///
+    /// This is the recommended policy for ECDSA-based validation with P-256 curve.
+    #[cfg(feature = "ecdsa")]
+    pub fn es256_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::ES256])
+    }
+
+    /// Policy that allows only ES384 (ECDSA with P-384)
+    #[cfg(feature = "ecdsa")]
+    pub fn es384_only() -> Self {
+        Self::allow_only(vec![AlgorithmId::ES384])
+    }
+
+    /// Policy that allows any ECDSA algorithm (ES256, ES384)
+    #[cfg(feature = "ecdsa")]
+    pub fn ecdsa_any() -> Self {
+        Self::allow_only(vec![AlgorithmId::ES256, AlgorithmId::ES384])
+    }
+
+    /// Policy that allows recommended asymmetric algorithms (RS256 + ES256)
+    ///
+    /// This is a good default for services that need to support both RSA and ECDSA
+    /// but want to restrict to the most common, well-supported algorithms.
+    #[cfg(any(feature = "rsa", feature = "ecdsa"))]
+    pub fn recommended_asymmetric() -> Self {
+        let mut algorithms = Vec::new();
+
+        #[cfg(feature = "rsa")]
+        algorithms.push(AlgorithmId::RS256);
+
+        #[cfg(feature = "ecdsa")]
+        algorithms.push(AlgorithmId::ES256);
+
+        Self::allow_only(algorithms)
+    }
+
     /// Check if an algorithm is allowed
     pub fn is_allowed(&self, algorithm: &AlgorithmId) -> bool {
         self.allowed.contains(algorithm)

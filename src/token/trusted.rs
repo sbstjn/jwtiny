@@ -106,7 +106,7 @@ mod tests {
 
         let token_str = format!("{}.{}", signing_input, signature_b64);
         let parsed = ParsedToken::from_string(&token_str).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
 
         let key = Key::symmetric(secret);
         let result = trusted.verify_signature(&key);
@@ -126,7 +126,7 @@ mod tests {
         );
 
         let parsed = ParsedToken::from_string(&token_str).unwrap();
-        let trusted = parsed.trust_without_issuer_check();
+        let trusted = parsed.danger_trust_without_issuer_check();
 
         let key = Key::symmetric(b"secret");
         let result = trusted.verify_signature(&key);

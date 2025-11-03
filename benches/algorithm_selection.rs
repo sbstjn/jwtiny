@@ -3,7 +3,7 @@
 //! Benchmarks the overhead of algorithm policy enforcement
 //! and algorithm selection logic.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jwtiny::*;
 
 /// Helper to generate tokens with different algorithms

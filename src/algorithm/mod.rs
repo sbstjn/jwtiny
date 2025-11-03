@@ -8,7 +8,7 @@ pub mod rsa;
 #[cfg(feature = "ecdsa")]
 pub mod ecdsa;
 
-pub use traits::{get_verifier, Algorithm, SignatureVerifier};
+pub use traits::{Algorithm, SignatureVerifier, get_verifier};
 
 use crate::error::{Error, Result};
 
@@ -97,7 +97,9 @@ impl AlgorithmId {
             AlgorithmId::ES384 => "ES384",
 
             #[cfg(not(any(feature = "rsa", feature = "ecdsa")))]
-            _ => unreachable!("At least one asymmetric algorithm feature must be enabled for this variant to exist"),
+            _ => unreachable!(
+                "At least one asymmetric algorithm feature must be enabled for this variant to exist"
+            ),
         }
     }
 

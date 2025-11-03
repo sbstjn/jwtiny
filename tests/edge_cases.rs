@@ -817,8 +817,8 @@ fn test_rsa_algorithm_with_hmac_key() {
 fn test_hmac_algorithm_with_rsa_key() {
     // Token header claims HS256 but we try to verify with RSA public key
     // This should fail with KeyTypeMismatch error
-    use rsa::pkcs8::EncodePublicKey;
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePublicKey;
 
     // Generate a test RSA key
     let mut rng = rand::thread_rng();
@@ -875,8 +875,8 @@ fn test_rsa_algorithm_with_ecdsa_key() {
 fn test_ecdsa_algorithm_with_rsa_key() {
     // Token header claims ES256 but we provide an RSA key
     // This should fail with KeyTypeMismatch error
-    use rsa::pkcs8::EncodePublicKey;
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePublicKey;
 
     // Generate a test RSA key
     let mut rng = rand::thread_rng();
@@ -954,8 +954,8 @@ fn test_hmac_algorithm_with_ecdsa_key() {
 fn test_algorithm_confusion_different_rsa_variants() {
     // Test that RS256 token can't be verified as RS384 or RS512
     // Even though they're all RSA, the hash algorithm differs
-    use rsa::pkcs8::EncodePublicKey;
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePublicKey;
 
     let mut rng = rand::thread_rng();
     let private_key = RsaPrivateKey::new(&mut rng, 2048).unwrap();

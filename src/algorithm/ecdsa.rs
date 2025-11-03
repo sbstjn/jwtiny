@@ -91,7 +91,7 @@ mod tests {
     use super::*;
     use ring::rand::SystemRandom;
     use ring::signature::{
-        EcdsaKeyPair, KeyPair, ECDSA_P256_SHA256_ASN1_SIGNING, ECDSA_P384_SHA384_ASN1_SIGNING,
+        ECDSA_P256_SHA256_ASN1_SIGNING, ECDSA_P384_SHA384_ASN1_SIGNING, EcdsaKeyPair, KeyPair,
     };
 
     fn generate_ecdsa_keypair(curve: EcdsaCurve) -> (Vec<u8>, Vec<u8>) {

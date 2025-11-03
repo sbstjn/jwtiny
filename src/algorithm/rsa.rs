@@ -89,11 +89,11 @@ fn verify_rsa(
 mod tests {
     use super::*;
     use ring::rand::SystemRandom;
-    use ring::signature::{RsaKeyPair, RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512};
+    use ring::signature::{RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair};
 
     // Helper to generate RSA key pair for testing
     fn generate_rsa_keypair() -> (Vec<u8>, RsaKeyPair) {
-        use rsa::{pkcs8::EncodePrivateKey, RsaPrivateKey};
+        use rsa::{RsaPrivateKey, pkcs8::EncodePrivateKey};
 
         let mut rng = rand::thread_rng();
         let rsa_private_key = RsaPrivateKey::new(&mut rng, 2048).expect("Failed to generate key");

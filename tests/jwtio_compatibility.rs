@@ -153,7 +153,7 @@ mod jwtio_rsa_tests {
     #[test]
     fn test_rs256_round_trip_jwtio_format() {
         use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
-        use rsa::{traits::PublicKeyParts, RsaPrivateKey};
+        use rsa::{RsaPrivateKey, traits::PublicKeyParts};
 
         // Generate key pair
         let mut rng = rand::thread_rng();
@@ -176,7 +176,7 @@ mod jwtio_rsa_tests {
             #[cfg(feature = "aws-lc-rs")]
             {
                 use aws_lc_rs::rand::SystemRandom;
-                use aws_lc_rs::signature::{KeyPair, RsaKeyPair, RSA_PKCS1_SHA256};
+                use aws_lc_rs::signature::{KeyPair, RSA_PKCS1_SHA256, RsaKeyPair};
 
                 let keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes()).unwrap();
                 let public_key_der = keypair.public_key().as_ref().to_vec();
@@ -197,7 +197,7 @@ mod jwtio_rsa_tests {
             #[cfg(not(feature = "aws-lc-rs"))]
             {
                 use ring::rand::SystemRandom;
-                use ring::signature::{RsaKeyPair, RSA_PKCS1_SHA256};
+                use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
 
                 let keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes()).unwrap();
                 let public_key_der = keypair.public().as_ref().to_vec();

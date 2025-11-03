@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 env:
   CARGO_TERM_COLOR: always
@@ -79,7 +82,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.85.1
+          toolchain: 1.85.0
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v4
@@ -219,9 +222,9 @@ jobs:
             cargo test --release --lib --tests --bins --examples --features "${{ matrix.features }}"
           fi
 
-  # Benchmarks - run in parallel (disabled for now)
+  # Benchmarks - run in parallel on pull requests
   benchmarks:
-    if: ${{ false }}
+    if: github.event_name == 'pull_request'
     name: Benchmarks (${{ matrix.group }})
     runs-on: ubuntu-latest
     strategy:
@@ -383,6 +386,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: [lint, docs, all-tests-tag, all-tests-release, msrv, cargo-deny]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code

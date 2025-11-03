@@ -3,7 +3,7 @@
 //! Benchmarks the performance of ECDSA algorithms using
 //! either ring or aws-lc-rs backend.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jwtiny::*;
 
 /// Helper to generate ECDSA-signed tokens

@@ -11,15 +11,15 @@
 //! Requires jwkserve running on localhost:3000 (use docker-compose up -d or GitHub Actions service).
 //! Benchmarks gracefully skip if jwkserve is not available.
 
-use criterion::{criterion_group, criterion_main, Criterion};
 #[cfg(feature = "remote")]
 use criterion::{BenchmarkId, Throughput};
+use criterion::{Criterion, criterion_group, criterion_main};
+#[cfg(feature = "remote")]
+use jwtiny::Error;
 #[cfg(feature = "remote")]
 use jwtiny::jwks;
 #[cfg(feature = "remote")]
 use jwtiny::remote::HttpClient;
-#[cfg(feature = "remote")]
-use jwtiny::Error;
 #[cfg(feature = "remote")]
 use std::sync::Arc;
 #[cfg(feature = "remote")]

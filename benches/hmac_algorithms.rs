@@ -3,7 +3,7 @@
 //! Benchmarks the performance of different HMAC algorithms
 //! to compare hash function overhead.
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use jwtiny::*;
 
 /// Helper to generate HMAC-signed tokens

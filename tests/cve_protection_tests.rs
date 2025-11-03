@@ -104,8 +104,8 @@ fn test_cve_none_algorithm_lowercase() {
 #[cfg(feature = "rsa")]
 #[test]
 fn test_cve_algorithm_confusion_rsa_to_hmac() {
-    use rsa::pkcs8::EncodePublicKey;
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePublicKey;
 
     // Step 1: Generate RSA key pair
     let mut rng = rand::thread_rng();
@@ -149,8 +149,8 @@ fn test_cve_algorithm_confusion_rsa_to_hmac() {
 #[cfg(feature = "rsa")]
 #[test]
 fn test_cve_algorithm_confusion_hmac_to_rsa() {
-    use rsa::pkcs8::EncodePublicKey;
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePublicKey;
 
     // Generate RSA key
     let mut rng = rand::thread_rng();

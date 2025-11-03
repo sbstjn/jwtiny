@@ -1,8 +1,8 @@
 [package]
 name = "jwtiny"
 version = "0.0.0"
-edition = "2021"
-rust-version = "1.85.1"
+edition = "2024"
+rust-version = "1.85.0"
 authors = ["Sebastian Müller <c@sbstjn.com>"]
 description = "Minimal, type-safe JWT validation library"
 license = "MIT"

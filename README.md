@@ -7,9 +7,9 @@
 
 > Minimal, type-safe JSON Web Token (JWT) validation for Rust.
 
-**jwtiny** validates JWT tokens through a builder-pattern API that attempts to enforce correct validation order at compile time. Initially created to explore `miniserde` support, it aims to prioritize safety, clarity, and zero-cost abstractions.
+**jwtiny** validates JWT tokens through a builder-pattern API that attempts to enforce correct validation order at compile time. Initially created to explore `miniserde` support for common JWT libraries, this ended up as a full library.
 
-> **Warning:** This is a learning project to get more familiar with Rust.
+> **Warning:** This is a learning project to get more familiar with Rust. If you spot any flaws, let me know. If you can make any use of this, let me know as well! 🎉
 
 ## Overview
 
@@ -23,7 +23,7 @@ Common pitfalls include algorithm confusion attacks (accepting asymmetric algori
 
 | Feature | Default | Description |
 |---------|---------|-------------|
-| HMAC | ✅ | HMAC algorithms (HS256, HS384, HS512) — always enabled |
+| `hmac` | ✅ | HMAC algorithms (HS256, HS384, HS512) — **always enabled** |
 | `rsa` | ❌ | RSA algorithms (RS256, RS384, RS512) |
 | `ecdsa` | ❌ | ECDSA algorithms (ES256, ES384) |
 | `aws-lc-rs` | ❌ | Use `aws-lc-rs` backend instead of `ring` for RSA/ECDSA |

@@ -36,7 +36,7 @@ use crate::token::{TokenHeader, ValidatedToken};
 ///
 /// let validated = TokenValidator::new(token)
 ///     .ensure_issuer(|iss| Ok(iss == "https://trusted.com"))
-///     .verify_signature(SignatureVerification::with_secret(b"secret"))
+///     .verify_signature(SignatureVerification::with_secret_hs256(b"secret"))
 ///     .validate_token(ValidationConfig::default())
 ///     .run()?;
 ///

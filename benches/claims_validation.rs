@@ -160,8 +160,11 @@ fn bench_aud_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret(
+                        secret,
+                        AlgorithmPolicy::hmac_any(),
+                    ))
                     .validate_token(
                         ValidationConfig::default()
                             .require_audience("api")
@@ -184,8 +187,11 @@ fn bench_aud_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret(
+                        secret,
+                        AlgorithmPolicy::hmac_any(),
+                    ))
                     .validate_token(
                         ValidationConfig::default()
                             .require_audience("api")

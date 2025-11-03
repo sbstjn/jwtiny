@@ -228,7 +228,7 @@ SignatureVerification::with_key(
 SignatureVerification::with_ecdsa_es256(public_key_der)
 ```
 
-**Algorithm restrictions are mandatory in 2.0**. Use algorithm-specific constructors (preferred) or pass an explicit `AlgorithmPolicy`.
+Use algorithm-specific constructors (preferred) or pass an explicit `AlgorithmPolicy`.
 
 ### Claims Validation
 

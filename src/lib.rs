@@ -31,7 +31,7 @@
 //!     ParsedToken::from_string(token_str)?
 //! )
 //!     .ensure_issuer(|iss| Ok(iss == "https://trusted.com"))
-//!     .verify_signature(SignatureVerification::with_secret(b"secret"))
+//!     .verify_signature(SignatureVerification::with_secret_hs256(b"secret"))
 //!     .validate_token(ValidationConfig::default())
 //!     .run()?;
 //!
@@ -76,19 +76,24 @@
 //!
 //! ```ignore
 //! // Symmetric key (HMAC)
-//! SignatureVerification::with_secret(b"your-256-bit-secret")
-//!     .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]))
+//! SignatureVerification::with_secret_hs256(b"your-256-bit-secret")
 //!
 //! // Public key (RSA/ECDSA)
-//! SignatureVerification::with_key(Key::rsa_public(public_key_der))
+//! SignatureVerification::with_key(
+//!     Key::rsa_public(public_key_der),
+//!     AlgorithmPolicy::rs256_only(),
+//! )
 //!
 //! // Remote JWKS fetching
-//! SignatureVerification::with_jwks(http_client, true)
+//! SignatureVerification::with_jwks(
+//!     http_client,
+//!     AlgorithmPolicy::recommended_asymmetric(),
+//!     true,
+//! )
 //! ```
 //!
-//! **Algorithm restrictions are recommended** to prevent algorithm confusion. Without
-//! `.allow_algorithms()`, any algorithm matching the key type is accepted; with it, only
-//! explicitly allowed algorithms pass validation.
+//! Use algorithm-specific constructors (preferred) or pass an explicit
+//! `AlgorithmPolicy` to prevent algorithm confusion.
 //!
 //! ## Claims Validation
 //!

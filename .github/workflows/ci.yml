@@ -222,9 +222,9 @@ jobs:
             cargo test --release --lib --tests --bins --examples --features "${{ matrix.features }}"
           fi
 
-  # Benchmarks - run in parallel (disabled for now)
+  # Benchmarks - run in parallel on pull requests
   benchmarks:
-    if: ${{ false }}
+    if: github.event_name == 'pull_request'
     name: Benchmarks (${{ matrix.group }})
     runs-on: ubuntu-latest
     strategy:

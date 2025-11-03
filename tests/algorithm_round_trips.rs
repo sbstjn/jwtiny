@@ -59,7 +59,10 @@ mod hmac_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(secret, AlgorithmPolicy::hs256_only()))
+            .verify_signature(SignatureVerification::with_secret(
+                secret,
+                AlgorithmPolicy::hs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -109,7 +112,10 @@ mod hmac_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(secret, AlgorithmPolicy::hs384_only()))
+            .verify_signature(SignatureVerification::with_secret(
+                secret,
+                AlgorithmPolicy::hs384_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -158,7 +164,10 @@ mod hmac_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_secret(secret, AlgorithmPolicy::hs512_only()))
+            .verify_signature(SignatureVerification::with_secret(
+                secret,
+                AlgorithmPolicy::hs512_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -291,9 +300,10 @@ mod rsa_tests {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(
-                public_key_der,
-            )))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(public_key_der),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run()
             .expect("verification failed");
@@ -372,10 +382,10 @@ mod cross_algorithm_tests {
         let parsed = ParsedToken::from_string(&token_str).unwrap();
         let result = TokenValidator::new(parsed)
             .danger_skip_issuer_validation()
-            .verify_signature(
-                SignatureVerification::with_secret(secret)
-                    .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256])),
-            )
+            .verify_signature(SignatureVerification::with_secret(
+                secret,
+                AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
         assert!(result.is_ok(), "Should accept HS256 when in allow list");
@@ -384,10 +394,10 @@ mod cross_algorithm_tests {
         let parsed = ParsedToken::from_string(&token_str).unwrap();
         let result = TokenValidator::new(parsed)
             .danger_skip_issuer_validation()
-            .verify_signature(
-                SignatureVerification::with_secret(secret)
-                    .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS384])),
-            )
+            .verify_signature(SignatureVerification::with_secret(
+                secret,
+                AlgorithmPolicy::allow_only(vec![AlgorithmId::HS384]),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
         assert!(

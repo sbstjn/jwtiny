@@ -28,8 +28,8 @@ use std::sync::Arc;
 ///
 /// # Security: Algorithm Policy Required
 ///
-/// As of version 2.0, an explicit algorithm policy is **required** to prevent
-/// algorithm confusion attacks. Use algorithm-specific constructors like
+/// An explicit algorithm policy is **required** to prevent algorithm
+/// confusion attacks. Use algorithm-specific constructors like
 /// [`with_secret_hs256`](Self::with_secret_hs256) for convenience, or use
 /// [`with_secret`](Self::with_secret) with an explicit policy.
 ///
@@ -137,19 +137,28 @@ impl SignatureVerification {
     /// Equivalent to: `with_key(Key::rsa_public(der), AlgorithmPolicy::rs256_only())`
     #[cfg(feature = "rsa")]
     pub fn with_rsa_rs256(public_key_der: &[u8]) -> Self {
-        Self::with_key(Key::rsa_public(public_key_der), AlgorithmPolicy::rs256_only())
+        Self::with_key(
+            Key::rsa_public(public_key_der),
+            AlgorithmPolicy::rs256_only(),
+        )
     }
 
     /// Verify using RS384 (RSA with SHA-384) - Convenience constructor
     #[cfg(feature = "rsa")]
     pub fn with_rsa_rs384(public_key_der: &[u8]) -> Self {
-        Self::with_key(Key::rsa_public(public_key_der), AlgorithmPolicy::rs384_only())
+        Self::with_key(
+            Key::rsa_public(public_key_der),
+            AlgorithmPolicy::rs384_only(),
+        )
     }
 
     /// Verify using RS512 (RSA with SHA-512) - Convenience constructor
     #[cfg(feature = "rsa")]
     pub fn with_rsa_rs512(public_key_der: &[u8]) -> Self {
-        Self::with_key(Key::rsa_public(public_key_der), AlgorithmPolicy::rs512_only())
+        Self::with_key(
+            Key::rsa_public(public_key_der),
+            AlgorithmPolicy::rs512_only(),
+        )
     }
 
     /// Verify using ES256 (ECDSA with P-256 and SHA-256) - Convenience constructor
@@ -758,9 +767,10 @@ mod tests {
         // Should fail with only RS256 allowed (token is HS256, but policy only allows RS256)
         let result = TokenValidator::new(parsed)
             .ensure_issuer(|_| Ok(()))
-            .verify_signature(
-                SignatureVerification::with_secret(b"test-secret", AlgorithmPolicy::rs256_only())
-            )
+            .verify_signature(SignatureVerification::with_secret(
+                b"test-secret",
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 

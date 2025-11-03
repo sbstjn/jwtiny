@@ -66,11 +66,11 @@ fn bench_rsa_end_to_end(c: &mut Criterion) {
         b.iter(|| {
             let parsed = ParsedToken::from_string(&token_str).unwrap();
             let _ = TokenValidator::new(parsed)
-                .skip_issuer_check()
-                .verify_signature(
-                    SignatureVerification::with_key(pub_key.clone())
-                        .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::RS256])),
-                )
+                .danger_skip_issuer_validation()
+                .verify_signature(SignatureVerification::with_key(
+                    pub_key.clone(),
+                    AlgorithmPolicy::rs256_only(),
+                ))
                 .validate_token(ValidationConfig::default().skip_all())
                 .run();
         });
@@ -80,11 +80,11 @@ fn bench_rsa_end_to_end(c: &mut Criterion) {
         b.iter(|| {
             let parsed = ParsedToken::from_string(&token_str).unwrap();
             let _ = TokenValidator::new(parsed)
-                .skip_issuer_check()
-                .verify_signature(
-                    SignatureVerification::with_key(pub_key.clone())
-                        .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::RS256])),
-                )
+                .danger_skip_issuer_validation()
+                .verify_signature(SignatureVerification::with_key(
+                    pub_key.clone(),
+                    AlgorithmPolicy::rs256_only(),
+                ))
                 .validate_token(
                     ValidationConfig::default()
                         .clock_skew(60)

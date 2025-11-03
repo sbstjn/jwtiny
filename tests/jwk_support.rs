@@ -71,9 +71,10 @@ mod rsa_jwk_tests {
 
         let result = TokenValidator::new(parsed)
             .danger_skip_issuer_validation()
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(
-                public_key_der,
-            )))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(public_key_der),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 

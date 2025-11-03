@@ -106,10 +106,11 @@ async fn end_to_end_verify_rs256_from_jwkserve() {
                 Err(Error::IssuerNotTrusted(iss.to_string()))
             }
         })
-        .verify_signature(
-            SignatureVerification::with_jwks(http_client, true)
-                .allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::RS256])),
-        )
+        .verify_signature(SignatureVerification::with_jwks(
+            http_client,
+            AlgorithmPolicy::rs256_only(),
+            true,
+        ))
         .validate_token(ValidationConfig::default())
         .run_async()
         .await;

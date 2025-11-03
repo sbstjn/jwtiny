@@ -2,7 +2,7 @@
   "name": "jwtiny",
   "private": true,
   "version": "0.0.0",
-  "description": "A minimal, type-safe JWT validation library",
+  "description": "A minimal, type-safe JWT validation library in Rust",
   "author": "Sebastian Müller",
   "license": "MIT",
   "repository": {

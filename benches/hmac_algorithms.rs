@@ -69,8 +69,8 @@ fn bench_hmac_verification(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default().skip_all())
                     .run();
             });
@@ -86,8 +86,8 @@ fn bench_hmac_verification(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs384(secret))
                     .validate_token(ValidationConfig::default().skip_all())
                     .run();
             });
@@ -103,8 +103,8 @@ fn bench_hmac_verification(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs512(secret))
                     .validate_token(ValidationConfig::default().skip_all())
                     .run();
             });

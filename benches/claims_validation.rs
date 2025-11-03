@@ -47,8 +47,8 @@ fn bench_exp_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default())
                     .run();
             });
@@ -64,8 +64,8 @@ fn bench_exp_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default())
                     .run();
             });
@@ -81,8 +81,8 @@ fn bench_exp_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default().clock_skew(60))
                     .run();
             });
@@ -112,8 +112,8 @@ fn bench_nbf_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default())
                     .run();
             });
@@ -129,8 +129,8 @@ fn bench_nbf_validation(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default())
                     .run();
             });
@@ -229,7 +229,7 @@ fn bench_iss_validation(c: &mut Criterion) {
                             Err(Error::IssuerNotTrusted(iss.to_string()))
                         }
                     })
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default().clock_skew(60))
                     .run();
             });
@@ -255,7 +255,7 @@ fn bench_iss_validation(c: &mut Criterion) {
                             Err(Error::IssuerNotTrusted(iss.to_string()))
                         }
                     })
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(ValidationConfig::default().clock_skew(60))
                     .run();
             });
@@ -297,7 +297,7 @@ fn bench_full_validation(c: &mut Criterion) {
                             Err(Error::IssuerNotTrusted(iss.to_string()))
                         }
                     })
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .verify_signature(SignatureVerification::with_secret_hs256(secret))
                     .validate_token(
                         ValidationConfig::default()
                             .require_audience("api")

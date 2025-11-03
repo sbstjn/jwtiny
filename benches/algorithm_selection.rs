@@ -67,8 +67,11 @@ fn bench_algorithm_policy(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret))
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret(
+                        secret,
+                        AlgorithmPolicy::hmac_any(),
+                    ))
                     .validate_token(ValidationConfig::default().skip_all())
                     .run();
             });
@@ -83,12 +86,11 @@ fn bench_algorithm_policy(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(
-                        SignatureVerification::with_secret(secret).allow_algorithms(
-                            AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]),
-                        ),
-                    )
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret(
+                        secret,
+                        AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]),
+                    ))
                     .validate_token(ValidationConfig::default().skip_all())
                     .run();
             });
@@ -103,8 +105,9 @@ fn bench_algorithm_policy(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(SignatureVerification::with_secret(secret).allow_algorithms(
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret(
+                        secret,
                         AlgorithmPolicy::allow_only(vec![
                             AlgorithmId::HS256,
                             AlgorithmId::HS384,
@@ -125,12 +128,11 @@ fn bench_algorithm_policy(c: &mut Criterion) {
             b.iter(|| {
                 let parsed = ParsedToken::from_string(&token).unwrap();
                 let _ = TokenValidator::new(parsed)
-                    .skip_issuer_check()
-                    .verify_signature(
-                        SignatureVerification::with_secret(secret).allow_algorithms(
-                            AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]),
-                        ),
-                    )
+                    .danger_skip_issuer_validation()
+                    .verify_signature(SignatureVerification::with_secret(
+                        secret,
+                        AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]),
+                    ))
                     .validate_token(ValidationConfig::default().skip_all())
                     .run();
             });

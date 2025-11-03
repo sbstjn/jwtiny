@@ -91,9 +91,10 @@ mod rsa_key_formats {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(
-                public_key_der.as_bytes(),
-            )))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(public_key_der.as_bytes()),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -129,9 +130,10 @@ mod rsa_key_formats {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(
-                public_key_pkcs1_der.as_bytes(),
-            )))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(public_key_pkcs1_der.as_bytes()),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -171,7 +173,10 @@ mod rsa_key_formats {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(der_bytes)))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(der_bytes),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -210,7 +215,10 @@ mod rsa_key_formats {
                     Err(Error::IssuerNotTrusted(iss.to_string()))
                 }
             })
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(der_bytes)))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(der_bytes),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -238,9 +246,10 @@ mod rsa_key_formats {
         let parsed1 = ParsedToken::from_string(&token_str).unwrap();
         let result1 = TokenValidator::new(parsed1)
             .danger_skip_issuer_validation()
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(
-                pkcs8_der.as_bytes(),
-            )))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(pkcs8_der.as_bytes()),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 
@@ -248,9 +257,10 @@ mod rsa_key_formats {
         let parsed2 = ParsedToken::from_string(&token_str).unwrap();
         let result2 = TokenValidator::new(parsed2)
             .danger_skip_issuer_validation()
-            .verify_signature(SignatureVerification::with_key(Key::rsa_public(
-                pkcs1_der.as_bytes(),
-            )))
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(pkcs1_der.as_bytes()),
+                AlgorithmPolicy::rs256_only(),
+            ))
             .validate_token(ValidationConfig::default())
             .run();
 

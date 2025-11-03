@@ -1,15 +1,15 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jwtiny::*;
 
 /// Helper function to generate a valid RS256 token
 #[cfg(feature = "rsa")]
 fn generate_rs256_token() -> (String, Key) {
-    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
     use base64::Engine;
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
     use ring::rand::SystemRandom;
-    use ring::signature::{RsaKeyPair, RSA_PKCS1_SHA256};
-    use rsa::pkcs8::EncodePrivateKey;
+    use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePrivateKey;
 
     let header = r#"{"alg":"RS256","typ":"JWT"}"#;
     let payload =

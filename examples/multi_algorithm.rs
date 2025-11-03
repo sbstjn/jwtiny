@@ -41,7 +41,7 @@ fn test_hmac() -> Result<()> {
 #[cfg(feature = "rsa")]
 fn test_rsa() -> Result<()> {
     use ring::signature::RsaKeyPair;
-    use rsa::{pkcs8::EncodePrivateKey, RsaPrivateKey};
+    use rsa::{RsaPrivateKey, pkcs8::EncodePrivateKey};
 
     println!("--- Testing RSA Algorithms ---");
 
@@ -75,7 +75,7 @@ fn test_rsa() -> Result<()> {
 fn test_ecdsa() -> Result<()> {
     use ring::rand::SystemRandom;
     use ring::signature::{
-        EcdsaKeyPair, KeyPair, ECDSA_P256_SHA256_ASN1_SIGNING, ECDSA_P384_SHA384_ASN1_SIGNING,
+        ECDSA_P256_SHA256_ASN1_SIGNING, ECDSA_P384_SHA384_ASN1_SIGNING, EcdsaKeyPair, KeyPair,
     };
 
     println!("--- Testing ECDSA Algorithms ---");

@@ -19,9 +19,9 @@ mod rsa_key_formats {
     // Note: These tests require rsa crate version alignment with sha2
     // Currently disabled pending dependency resolution
     use super::*;
+    use rsa::RsaPrivateKey;
     use rsa::pkcs1::EncodeRsaPublicKey;
     use rsa::pkcs8::EncodePublicKey;
-    use rsa::RsaPrivateKey;
     use sha2::Sha256;
 
     /// Generate a test RSA key pair
@@ -283,7 +283,7 @@ mod rsa_key_formats {
             .filter(|line| !line.starts_with("-----"))
             .collect();
         let base64_str = lines.join("");
-        use base64::{engine::general_purpose, Engine as _};
+        use base64::{Engine as _, engine::general_purpose};
         general_purpose::STANDARD
             .decode(&base64_str)
             .expect("failed to decode base64")

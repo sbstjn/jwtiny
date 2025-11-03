@@ -24,9 +24,9 @@ mod rsa_jwk_tests {
     /// This simulates receiving JWK data and converting to DER for jwtiny
     #[test]
     fn test_verify_with_rsa_components() {
+        use rsa::RsaPrivateKey;
         use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
         use rsa::traits::PublicKeyParts;
-        use rsa::RsaPrivateKey;
 
         // Generate RSA key pair
         let mut rng = rand::thread_rng();
@@ -186,7 +186,7 @@ mod rsa_jwk_tests {
             #[cfg(feature = "aws-lc-rs")]
             {
                 use aws_lc_rs::rand::SystemRandom;
-                use aws_lc_rs::signature::{KeyPair, RsaKeyPair, RSA_PKCS1_SHA256};
+                use aws_lc_rs::signature::{KeyPair, RSA_PKCS1_SHA256, RsaKeyPair};
 
                 let keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes()).unwrap();
                 let rng = SystemRandom::new();
@@ -205,7 +205,7 @@ mod rsa_jwk_tests {
             #[cfg(not(feature = "aws-lc-rs"))]
             {
                 use ring::rand::SystemRandom;
-                use ring::signature::{RsaKeyPair, RSA_PKCS1_SHA256};
+                use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
 
                 let keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes()).unwrap();
                 let rng = SystemRandom::new();

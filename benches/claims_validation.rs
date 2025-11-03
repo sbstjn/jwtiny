@@ -3,7 +3,7 @@
 //! Benchmarks the performance of different claims validation
 //! operations (exp, nbf, iat, aud, iss, etc.)
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jwtiny::*;
 
 /// Helper to generate HMAC tokens with specific claims

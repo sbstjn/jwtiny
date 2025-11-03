@@ -185,8 +185,8 @@ mod hmac_tests {
 #[cfg(feature = "rsa")]
 mod rsa_tests {
     use super::*;
-    use rsa::pkcs8::EncodePrivateKey;
     use rsa::RsaPrivateKey;
+    use rsa::pkcs8::EncodePrivateKey;
 
     #[test]
     fn round_trip_rs256() {
@@ -244,7 +244,7 @@ mod rsa_tests {
             #[cfg(feature = "aws-lc-rs")]
             {
                 use aws_lc_rs::rand::SystemRandom;
-                use aws_lc_rs::signature::{KeyPair, RsaKeyPair, RSA_PKCS1_SHA256};
+                use aws_lc_rs::signature::{KeyPair, RSA_PKCS1_SHA256, RsaKeyPair};
 
                 let ring_keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes())
                     .expect("failed to create aws-lc-rs RsaKeyPair");
@@ -266,7 +266,7 @@ mod rsa_tests {
             #[cfg(not(feature = "aws-lc-rs"))]
             {
                 use ring::rand::SystemRandom;
-                use ring::signature::{RsaKeyPair, RSA_PKCS1_SHA256};
+                use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
 
                 let ring_keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes())
                     .expect("failed to create ring RsaKeyPair");

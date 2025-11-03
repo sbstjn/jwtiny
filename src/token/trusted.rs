@@ -1,4 +1,4 @@
-use crate::algorithm::{get_verifier, AlgorithmId};
+use crate::algorithm::{AlgorithmId, get_verifier};
 use crate::error::Result;
 use crate::keys::Key;
 use crate::token::{ParsedToken, TokenHeader, VerifiedToken};

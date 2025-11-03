@@ -7,7 +7,7 @@ use crate::discovery::{discover_jwks_uri, discover_jwks_uri_cached};
 #[cfg(feature = "remote")]
 use crate::error::{Error, Result};
 #[cfg(feature = "remote")]
-use crate::jwks::{fetch_jwks, fetch_jwks_cached, find_key_by_kid, JwkSet};
+use crate::jwks::{JwkSet, fetch_jwks, fetch_jwks_cached, find_key_by_kid};
 #[cfg(feature = "remote")]
 use crate::keys::Key;
 #[cfg(feature = "remote")]

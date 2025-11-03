@@ -291,6 +291,7 @@ jobs:
 
       - name: Upload size JSON
         uses: actions/upload-artifact@v4
+        if: ${{ false }}
         with:
           name: bundle-size-json-${{ matrix.name }}
           path: bundle-sizes/${{ matrix.name }}.json

@@ -122,8 +122,7 @@
 //! - **`ecdsa`**: ECDSA algorithms (ES256, ES384)
 //! - **`aws-lc-rs`**: Use `aws-lc-rs` backend instead of `ring` for RSA/ECDSA
 //! - **`all-algorithms`**: Enable all asymmetric algorithms (RSA + ECDSA)
-//! - **`remote`**: Remote JWKS fetching (requires HTTP client implementation)
-//! - **`remote-rustls`**: HTTPS support for JWKS (provide HTTPS-capable client)
+//! - **`remote`**: Remote JWKS over HTTPS (rustls). Provide an HTTP client.
 //!
 //! ## Security
 //!

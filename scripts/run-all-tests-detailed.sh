@@ -89,8 +89,7 @@ run_tests "all-algorithms" "All algorithms (ring)"
 run_tests "all-algorithms,aws-lc-rs" "All algorithms (aws-lc-rs)"
 
 # Remote features
-run_tests "remote" "Remote only"
-run_tests "remote-rustls" "Remote-rustls"
+run_tests "remote" "Remote (HTTPS via rustls)"
 
 # Remote with algorithms
 run_tests "rsa,remote" "RSA (ring) + remote"
@@ -99,9 +98,7 @@ run_tests "all-algorithms,remote" "All algorithms (ring) + remote"
 run_tests "rsa,aws-lc-rs,remote" "RSA (aws-lc-rs) + remote"
 run_tests "all-algorithms,aws-lc-rs,remote" "All algorithms (aws-lc-rs) + remote"
 
-# Remote-rustls combinations
-run_tests "rsa,remote-rustls" "RSA (ring) + remote-rustls"
-run_tests "all-algorithms,remote-rustls" "All algorithms (ring) + remote-rustls"
+# Remote (alias kept but unnecessary) combinations
 
 # Summary
 echo ""

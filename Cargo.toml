@@ -23,8 +23,8 @@ aws-lc-rs = ["dep:aws-lc-rs"]
 all-algorithms = ["rsa", "ecdsa"]
 
 # Remote fetching features
-remote = []
-remote-rustls = ["remote", "dep:rustls", "dep:webpki-roots", "dep:rustls-pki-types"]
+# `remote` now implies HTTPS via rustls by default.
+remote = ["dep:rustls", "dep:webpki-roots", "dep:rustls-pki-types"]
 
 [dependencies]
 # Core - minimal JSON serialization

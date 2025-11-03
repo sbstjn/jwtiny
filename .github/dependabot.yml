@@ -1,11 +1,74 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # 1) Rust dependencies (Cargo) — weekly maintenance
+  - package-ecosystem: "cargo"
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps(cargo)"
+      include: "scope"
+    groups:
+      cargo-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+      cargo-dev:
+        patterns:
+          - "criterion*"
+          - "proptest*"
+          - "insta*"
+          - "pretty_assertions*"
+      cargo-tools:
+        patterns:
+          - "cargo-*"
+    versioning-strategy: auto
+    rebase-strategy: auto
+    labels:
+      - "dependencies"
+      - "cargo"
+    # Protect MSRV by default; plan majors explicitly
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  # 2) GitHub Actions — weekly maintenance
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:30"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps(actions)"
+    groups:
+      gha-core:
+        patterns:
+          - "actions/*"
+          - "dtolnay/*"
+          - "Swatinem/rust-cache"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  # 3) Security-focused Cargo updates — daily
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+      timezone: "UTC"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    labels:
+      - "dependencies"
+      - "security"

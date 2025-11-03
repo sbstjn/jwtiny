@@ -247,13 +247,12 @@ impl AlgorithmPolicy {
     /// but want to restrict to the most common, well-supported algorithms.
     #[cfg(any(feature = "rsa", feature = "ecdsa"))]
     pub fn recommended_asymmetric() -> Self {
-        let mut algorithms = Vec::new();
-
-        #[cfg(feature = "rsa")]
-        algorithms.push(AlgorithmId::RS256);
-
-        #[cfg(feature = "ecdsa")]
-        algorithms.push(AlgorithmId::ES256);
+        let algorithms = vec![
+            #[cfg(feature = "rsa")]
+            AlgorithmId::RS256,
+            #[cfg(feature = "ecdsa")]
+            AlgorithmId::ES256,
+        ];
 
         Self::allow_only(algorithms)
     }

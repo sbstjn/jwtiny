@@ -203,7 +203,10 @@ fn test_cve_algorithm_confusion_ecdsa_to_hmac() {
     let result = trusted.verify_signature(&ecdsa_key);
 
     // Should fail (either KeyTypeMismatch or verification failure)
-    assert!(result.is_err(), "Should reject ECDSA key for HMAC algorithm");
+    assert!(
+        result.is_err(),
+        "Should reject ECDSA key for HMAC algorithm"
+    );
 }
 
 // ============================================================================
@@ -243,10 +246,7 @@ fn test_kid_sql_injection_attack() {
 
     // Should parse without error (kid is just a string)
     let parsed = ParsedToken::from_string(&token).unwrap();
-    assert_eq!(
-        parsed.header().key_id,
-        Some("' OR '1'='1".to_string())
-    );
+    assert_eq!(parsed.header().key_id, Some("' OR '1'='1".to_string()));
 
     // The attack fails because kid is only used for string comparison
     // No database queries occur
@@ -300,8 +300,7 @@ fn test_cve_embedded_jwk_not_supported() {
 #[test]
 fn test_jku_header_not_supported() {
     // Attack: Point jku to attacker-controlled URL
-    let header =
-        r#"{"alg":"RS256","typ":"JWT","jku":"https://attacker.com/malicious_jwks.json"}"#;
+    let header = r#"{"alg":"RS256","typ":"JWT","jku":"https://attacker.com/malicious_jwks.json"}"#;
     let payload = r#"{"iss":"attacker","sub":"admin","exp":9999999999}"#;
 
     let header_b64 = jwtiny::utils::base64url::encode(header);

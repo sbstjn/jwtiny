@@ -396,5 +396,4 @@ MIT
 - [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519) — JSON Web Token (JWT)
 - [RFC 8725](https://datatracker.ietf.org/doc/html/rfc8725) — JSON Web Signature Best Practices
 - [RFC 4648](https://datatracker.ietf.org/doc/html/rfc4648) — Base64URL encoding
-- [Rust Book](https://doc.rust-lang.org/book/) — Ownership and borrowing
 - [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/) — Idiomatic Rust design

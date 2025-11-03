@@ -1,27 +1,64 @@
+[graph]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+]
+all-features = true
+
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
-unsound = "deny"
-yanked = "warn"
-ignore = []
+# Advisory database configuration
+# Vulnerabilities and advisories are checked automatically when db-urls is set
+ignore = [
+    # RUSTSEC-2023-0071: rsa crate timing attack vulnerability
+    # Only used in dev-dependencies for testing, not in production code
+    { id = "RUSTSEC-2023-0071", reason = "rsa crate only used in dev-dependencies for tests, not in production" },
+]
 
 [licenses]
-unlicensed = "deny"
+# Confidence threshold for license detection (0.0-1.0)
+confidence-threshold = 0.8
+# Explicitly allowed licenses
+# Based on actual dependencies: MIT, Apache-2.0, BSD-3-Clause, ISC, OpenSSL, Unicode-3.0, CDLA-Permissive-2.0
 allow = [
     "MIT",
     "Apache-2.0",
     "BSD-3-Clause",
     "ISC",
+    "OpenSSL",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
 ]
-deny = []
-copyleft = "warn"
+# Per-crate license exceptions
+exceptions = []
+
+[licenses.private]
+# Ignore workspace crates that aren't published to public registry
+ignore = false
 
 [bans]
+# Lint level for multiple versions of the same crate
 multiple-versions = "warn"
+# Lint level for wildcard version requirements (*)
 wildcards = "deny"
+# Graph highlighting for duplicate detection
+highlight = "all"
+# Crates explicitly allowed
+allow = []
+# Crates explicitly denied
 deny = []
+# Crates to skip during duplicate detection
+skip = []
 
 [sources]
+# Lint level for unknown registries
 unknown-registry = "deny"
+# Lint level for unknown git repositories
 unknown-git = "deny"
-
+# Allowed crate registries (defaults to crates.io if not specified)
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# Allowed git repositories
+allow-git = []

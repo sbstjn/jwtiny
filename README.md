@@ -62,16 +62,6 @@ let token = TokenValidator::new(
 println!("Subject: {:?}", token.subject());
 ```
 
-## ⚠️ Version 2.0 Breaking Changes
-
-Version 2.0 introduces important security improvements:
-
-1. **Algorithm policy is now mandatory** - Use algorithm-specific constructors like `with_secret_hs256()` or pass an explicit `AlgorithmPolicy`
-2. **Security-critical methods renamed** - `skip_issuer_check()` → `danger_skip_issuer_validation()` to make implications clear
-3. **JWKS requires explicit policy** - `with_jwks()` now requires an `AlgorithmPolicy` parameter
-
-See [`docs/SECURITY.md`](docs/SECURITY.md) for migration guide and security best practices.
-
 ## Examples
 
 ### HMAC Validation

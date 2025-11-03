@@ -37,7 +37,7 @@ miniserde = "0.1"
 # HMAC algorithms (always enabled)
 hmac = "0.12"
 sha2 = "0.10"
-subtle = "2.6"
+constant_time_eq = "0.4.2"
 
 # RSA and ECDSA algorithms (optional)
 # Default backend: ring

@@ -169,6 +169,59 @@ jobs:
             cargo test --lib --tests --bins --examples --features "${{ matrix.features }}"
           fi
 
+  # Release-mode tests - critical Ring paths
+  all-tests-release:
+    name: All Tests (Release)
+    runs-on: ubuntu-latest
+    services:
+      jwkserve:
+        image: sbstjn/jwkserve:latest
+        ports:
+          - 3000:3000
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - features: "all-algorithms"
+            name: All (Ring)
+            needs_jwkserve: false
+          - features: "all-algorithms,remote"
+            name: All + Remote
+            needs_jwkserve: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git/db
+            target
+          key: ${{ runner.os }}-cargo-all-release-${{ matrix.name }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-all-release-${{ matrix.name }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Wait for jwkserve to be ready
+        if: matrix.needs_jwkserve == true
+        run: |
+          timeout 30 bash -c 'until curl -sf http://localhost:3000/.well-known/openid-configuration; do sleep 1; done'
+
+      - name: Run all tests (release)
+        run: |
+          if [ -z "${{ matrix.features }}" ]; then
+            cargo test --release --lib --tests --bins --examples
+          else
+            cargo test --release --lib --tests --bins --examples --features "${{ matrix.features }}"
+          fi
+
   # Benchmarks - run in parallel (disabled for now)
   benchmarks:
     if: ${{ false }}
@@ -300,7 +353,7 @@ jobs:
   # Release - run after all tests and checks
   release:
     runs-on: ubuntu-latest
-    needs: [integration-tests-main, lint, docs, all-tests-tag]
+    needs: [integration-tests-main, lint, docs, all-tests-tag, all-tests-release]
 
     steps:
       - name: Checkout code

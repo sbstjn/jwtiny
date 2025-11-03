@@ -69,6 +69,35 @@ jobs:
       - name: Test documentation examples
         run: cargo test --doc --all-features
 
+  msrv:
+    name: MSRV Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (MSRV)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.74.0
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git/db
+            target
+          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build all targets
+        run: cargo build --all-targets
+
+      - name: Run tests (default features)
+        run: cargo test --lib --tests --bins --examples
+
   # Comprehensive tests - run in parallel
   all-tests-tag:
     name: All Tests
@@ -317,6 +346,21 @@ jobs:
           name: bundle-size-json-${{ matrix.name }}
           path: bundle-sizes/${{ matrix.name }}.json
           retention-days: 7
+
+  cargo-deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+
+      - name: Run cargo-deny
+        run: cargo deny check
 
   # Release - run after all tests and checks
   release:

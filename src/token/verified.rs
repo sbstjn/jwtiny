@@ -20,11 +20,7 @@ pub struct VerifiedToken {
 }
 
 impl VerifiedToken {
-    pub(crate) fn new(parsed: ParsedToken) -> Self {
-        let algorithm = parsed
-            .algorithm()
-            .expect("Algorithm should be valid at this point");
-
+    pub(crate) fn new(parsed: ParsedToken, algorithm: AlgorithmId) -> Self {
         Self {
             header: parsed.header().clone(),
             algorithm,

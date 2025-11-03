@@ -38,13 +38,15 @@ Add **jwtiny** to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-jwtiny = "1.0"
+jwtiny = "0.0.0"
 ```
+
+> **Note:** Current version is `0.0.0` (pre-release). Update to latest published version when available.
 
 For asymmetric algorithms (RSA, ECDSA), enable features:
 
 ```toml
-jwtiny = { version = "1.0", features = ["rsa", "ecdsa"] }
+jwtiny = { version = "0.0.0", features = ["rsa", "ecdsa"] }
 ```
 
 Minimal example validating an HMAC-signed token:
@@ -329,14 +331,14 @@ Select exactly one backend. The choice affects signature verification compatibil
 
 ```toml
 [dependencies]
-jwtiny = { version = "1.0", features = ["rsa", "ecdsa"] }
+jwtiny = { version = "0.0.0", features = ["rsa", "ecdsa"] }
 ```
 
 ### Using `aws-lc-rs`
 
 ```toml
 [dependencies]
-jwtiny = { version = "1.0", features = ["rsa", "ecdsa", "aws-lc-rs"] }
+jwtiny = { version = "0.0.0", features = ["rsa", "ecdsa", "aws-lc-rs"] }
 ```
 
 **Compatibility note:** If you're verifying tokens signed by services using `jsonwebtoken` with the `aws_lc_rs` feature (e.g., `jwkserve`), use the `aws-lc-rs` feature to ensure compatibility.

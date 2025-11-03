@@ -65,7 +65,7 @@ impl TrustedToken {
         verifier.verify(&self.parsed.signing_input(), self.parsed.signature(), key)?;
 
         // Move to VerifiedToken state
-        Ok(VerifiedToken::new(self.parsed))
+        Ok(VerifiedToken::new(self.parsed, algorithm))
     }
 
     /// Get signing input for external verification

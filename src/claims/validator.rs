@@ -232,7 +232,7 @@ impl ClaimsValidator {
     fn current_timestamp() -> i64 {
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("System time is before Unix epoch")
+            .unwrap_or_else(|_| std::time::Duration::from_secs(0))
             .as_secs() as i64
     }
 }

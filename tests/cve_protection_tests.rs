@@ -441,13 +441,13 @@ fn test_constant_time_comparison_used() {
     let result1 = trusted1.verify_signature(&key);
     assert!(result1.is_ok(), "Valid signature should verify");
 
-    // Invalid signature (tampered)
+    // Invalid signature (tampered): flip a bit in decoded signature bytes for determinism
     let parts: Vec<&str> = token.split('.').collect();
-    // Take valid signature and flip last character to keep it valid base64url but incorrect
-    let mut tampered_sig = parts[2].to_string();
-    let last_char = tampered_sig.pop().unwrap();
-    let new_char = if last_char == 'A' { 'B' } else { 'A' };
-    tampered_sig.push(new_char);
+    let mut sig_bytes = jwtiny::utils::base64url::decode_bytes(parts[2]).expect("decode signature");
+    if let Some(first) = sig_bytes.get_mut(0) {
+        *first ^= 0x01; // flip lowest bit
+    }
+    let tampered_sig = jwtiny::utils::base64url::encode_bytes(&sig_bytes);
     let tampered_token = format!("{}.{}.{}", parts[0], parts[1], tampered_sig);
 
     let parsed2 = ParsedToken::from_string(&tampered_token).unwrap();

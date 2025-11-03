@@ -2,6 +2,7 @@
 name = "jwtiny"
 version = "0.0.0"
 edition = "2021"
+rust-version = "1.74"
 authors = ["Sebastian Müller <c@sbstjn.com>"]
 description = "Minimal, type-safe JWT validation library"
 license = "MIT"

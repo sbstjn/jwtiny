@@ -42,6 +42,7 @@ pub fn encode_bytes(input: &[u8]) -> String {
         }
     }
 
+    // Base64URL charset contains only ASCII characters, so UTF-8 conversion is always safe
     String::from_utf8(result).expect("Base64URL encoding should produce valid UTF-8")
 }
 

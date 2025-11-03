@@ -274,8 +274,6 @@ Token (public API; safe to use)
 
 Only the final `Token` type is exposed publicly. Intermediate types (`TrustedToken`, `VerifiedToken`, `ValidatedToken`) are internal, which helps prevent partial validation from escaping the builder.
 
-## Security
-
 ### Algorithm Confusion Prevention
 
 Always restrict algorithms explicitly; an explicit policy is required. Prefer algorithm-specific constructors:

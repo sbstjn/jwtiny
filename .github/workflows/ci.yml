@@ -365,7 +365,7 @@ jobs:
   # Release - run after all tests and checks
   release:
     runs-on: ubuntu-latest
-    needs: [lint, docs, all-tests-tag, all-tests-release]
+    needs: [lint, docs, all-tests-tag, all-tests-release, msrv, cargo-deny]
 
     steps:
       - name: Checkout code

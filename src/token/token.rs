@@ -26,22 +26,28 @@ use crate::token::{TokenHeader, ValidatedToken};
 /// The token is now fully trusted and safe to use. All claims can be accessed
 /// without additional validation checks.
 ///
-/// # Example
+/// # Examples
+///
+/// Accessing claims from a validated token:
 ///
 /// ```ignore
 /// use jwtiny::*;
 ///
-/// let header = "eyJ...";
-/// let token = ParsedToken::from_string(header)?;
-///
-/// let validated = TokenValidator::new(token)
+/// // After validation, access claims through the Token
+/// let token = TokenValidator::new(parsed)
 ///     .ensure_issuer(|iss| Ok(iss == "https://trusted.com"))
 ///     .verify_signature(SignatureVerification::with_secret_hs256(b"secret"))
 ///     .validate_token(ValidationConfig::default())
 ///     .run()?;
 ///
-/// println!("Subject: {:?}", validated.subject());
-/// println!("Issuer: {:?}", validated.issuer());
+/// // Access standard claims
+/// println!("Subject: {:?}", token.subject());
+/// println!("Issuer: {:?}", token.issuer());
+/// println!("Expiration: {:?}", token.expiration());
+///
+/// // Or access the full claims struct
+/// let claims = token.claims();
+/// println!("All claims: {:?}", claims);
 /// ```
 pub struct Token {
     header: TokenHeader,

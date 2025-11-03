@@ -42,7 +42,7 @@ fn well_known_url_for_issuer(issuer: &str) -> Result<String> {
 ///
 /// # Arguments
 ///
-/// * `issuer` - The issuer URL (e.g., "https://auth.example.com")
+/// * `issuer` - The issuer URL (e.g., `<https://auth.example.com>`)
 /// * `client` - The HTTP client to use for fetching
 ///
 /// # Errors
@@ -97,7 +97,7 @@ fn discovery_cache() -> &'static Mutex<HashMap<String, (Instant, String)>> {
 ///
 /// # Arguments
 ///
-/// * `issuer` - The issuer URL (e.g., "https://auth.example.com")
+/// * `issuer` - The issuer URL (e.g., `<https://auth.example.com>`)
 /// * `client` - The HTTP client to use for fetching
 ///
 /// # Errors

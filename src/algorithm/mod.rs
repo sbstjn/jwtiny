@@ -163,16 +163,22 @@ impl AlgorithmPolicy {
     ///
     /// This is the recommended policy for HMAC-based validation when you control
     /// the signing key and algorithm.
+    ///
+    /// **Key requirements:** Minimum 256-bit (32-byte) secret recommended for security.
     pub fn hs256_only() -> Self {
         Self::allow_only(vec![AlgorithmId::HS256])
     }
 
     /// Policy that allows only HS384
+    ///
+    /// **Key requirements:** Minimum 384-bit (48-byte) secret recommended for security.
     pub fn hs384_only() -> Self {
         Self::allow_only(vec![AlgorithmId::HS384])
     }
 
     /// Policy that allows only HS512
+    ///
+    /// **Key requirements:** Minimum 512-bit (64-byte) secret recommended for security.
     pub fn hs512_only() -> Self {
         Self::allow_only(vec![AlgorithmId::HS512])
     }
@@ -194,18 +200,27 @@ impl AlgorithmPolicy {
     /// Policy that allows only RS256
     ///
     /// This is the recommended policy for RSA-based validation.
+    ///
+    /// **Key requirements:** Minimum 2048-bit RSA modulus required. For high-security
+    /// deployments, use 3072-bit or 4096-bit keys. Keys must be DER-encoded SubjectPublicKeyInfo.
     #[cfg(feature = "rsa")]
     pub fn rs256_only() -> Self {
         Self::allow_only(vec![AlgorithmId::RS256])
     }
 
     /// Policy that allows only RS384
+    ///
+    /// **Key requirements:** Minimum 2048-bit RSA modulus required. For high-security
+    /// deployments, use 3072-bit or 4096-bit keys. Keys must be DER-encoded SubjectPublicKeyInfo.
     #[cfg(feature = "rsa")]
     pub fn rs384_only() -> Self {
         Self::allow_only(vec![AlgorithmId::RS384])
     }
 
     /// Policy that allows only RS512
+    ///
+    /// **Key requirements:** Minimum 2048-bit RSA modulus required. For high-security
+    /// deployments, use 3072-bit or 4096-bit keys. Keys must be DER-encoded SubjectPublicKeyInfo.
     #[cfg(feature = "rsa")]
     pub fn rs512_only() -> Self {
         Self::allow_only(vec![AlgorithmId::RS512])
@@ -224,12 +239,18 @@ impl AlgorithmPolicy {
     /// Policy that allows only ES256 (ECDSA with P-256)
     ///
     /// This is the recommended policy for ECDSA-based validation with P-256 curve.
+    ///
+    /// **Key requirements:** P-256 curve (secp256r1), 256-bit. Keys must be DER-encoded
+    /// SubjectPublicKeyInfo format.
     #[cfg(feature = "ecdsa")]
     pub fn es256_only() -> Self {
         Self::allow_only(vec![AlgorithmId::ES256])
     }
 
     /// Policy that allows only ES384 (ECDSA with P-384)
+    ///
+    /// **Key requirements:** P-384 curve (secp384r1), 384-bit. Keys must be DER-encoded
+    /// SubjectPublicKeyInfo format.
     #[cfg(feature = "ecdsa")]
     pub fn es384_only() -> Self {
         Self::allow_only(vec![AlgorithmId::ES384])

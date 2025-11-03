@@ -5,6 +5,29 @@ pub use validator::{ClaimsValidator, ValidationConfig};
 use miniserde::Deserialize;
 
 /// Standard JWT claims as defined in RFC 7519 Section 4.1
+///
+/// This struct represents the standard JWT claims from [RFC 7519 Section 4.1](https://datatracker.ietf.org/doc/html/rfc7519#section-4.1).
+/// Claims are typically accessed through a validated [`Token`](crate::Token) after successful validation.
+///
+/// # Examples
+///
+/// Accessing claims from a validated token:
+///
+/// ```ignore
+/// use jwtiny::*;
+///
+/// // After validation, access claims through the Token
+/// let token = TokenValidator::new(parsed)
+///     .ensure_issuer(|iss| Ok(iss == "https://trusted.com"))
+///     .verify_signature(SignatureVerification::with_secret_hs256(b"secret"))
+///     .validate_token(ValidationConfig::default())
+///     .run()?;
+///
+/// let claims = token.claims();
+/// println!("Issuer: {:?}", claims.issuer);
+/// println!("Subject: {:?}", claims.subject);
+/// println!("Audience: {:?}", claims.audience);
+/// ```
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct Claims {
     /// Issuer (iss) - identifies the principal that issued the JWT

@@ -85,6 +85,8 @@ impl SignatureVerification {
     /// This is the most common HMAC algorithm and the recommended choice for
     /// symmetric key validation.
     ///
+    /// **Key requirements:** Minimum 256-bit (32-byte) secret recommended for security.
+    ///
     /// Equivalent to: `with_secret(secret, AlgorithmPolicy::hs256_only())`
     pub fn with_secret_hs256(secret: &[u8]) -> Self {
         Self::with_secret(secret, AlgorithmPolicy::hs256_only())
@@ -92,12 +94,16 @@ impl SignatureVerification {
 
     /// Verify using HS384 (HMAC with SHA-384) - Convenience constructor
     ///
+    /// **Key requirements:** Minimum 384-bit (48-byte) secret recommended for security.
+    ///
     /// Equivalent to: `with_secret(secret, AlgorithmPolicy::hs384_only())`
     pub fn with_secret_hs384(secret: &[u8]) -> Self {
         Self::with_secret(secret, AlgorithmPolicy::hs384_only())
     }
 
     /// Verify using HS512 (HMAC with SHA-512) - Convenience constructor
+    ///
+    /// **Key requirements:** Minimum 512-bit (64-byte) secret recommended for security.
     ///
     /// Equivalent to: `with_secret(secret, AlgorithmPolicy::hs512_only())`
     pub fn with_secret_hs512(secret: &[u8]) -> Self {
@@ -134,6 +140,9 @@ impl SignatureVerification {
     ///
     /// This is the most common RSA algorithm.
     ///
+    /// **Key requirements:** Minimum 2048-bit RSA modulus required. For high-security
+    /// deployments, use 3072-bit or 4096-bit keys. Keys must be DER-encoded SubjectPublicKeyInfo.
+    ///
     /// Equivalent to: `with_key(Key::rsa_public(der), AlgorithmPolicy::rs256_only())`
     #[cfg(feature = "rsa")]
     pub fn with_rsa_rs256(public_key_der: &[u8]) -> Self {
@@ -144,6 +153,9 @@ impl SignatureVerification {
     }
 
     /// Verify using RS384 (RSA with SHA-384) - Convenience constructor
+    ///
+    /// **Key requirements:** Minimum 2048-bit RSA modulus required. For high-security
+    /// deployments, use 3072-bit or 4096-bit keys. Keys must be DER-encoded SubjectPublicKeyInfo.
     #[cfg(feature = "rsa")]
     pub fn with_rsa_rs384(public_key_der: &[u8]) -> Self {
         Self::with_key(
@@ -153,6 +165,9 @@ impl SignatureVerification {
     }
 
     /// Verify using RS512 (RSA with SHA-512) - Convenience constructor
+    ///
+    /// **Key requirements:** Minimum 2048-bit RSA modulus required. For high-security
+    /// deployments, use 3072-bit or 4096-bit keys. Keys must be DER-encoded SubjectPublicKeyInfo.
     #[cfg(feature = "rsa")]
     pub fn with_rsa_rs512(public_key_der: &[u8]) -> Self {
         Self::with_key(
@@ -165,6 +180,9 @@ impl SignatureVerification {
     ///
     /// This is the most common ECDSA algorithm.
     ///
+    /// **Key requirements:** P-256 curve (secp256r1), 256-bit. Keys must be DER-encoded
+    /// SubjectPublicKeyInfo format.
+    ///
     /// Equivalent to: `with_key(Key::ecdsa_public(...), AlgorithmPolicy::es256_only())`
     #[cfg(feature = "ecdsa")]
     pub fn with_ecdsa_es256(public_key_der: &[u8]) -> Self {
@@ -175,6 +193,9 @@ impl SignatureVerification {
     }
 
     /// Verify using ES384 (ECDSA with P-384 and SHA-384) - Convenience constructor
+    ///
+    /// **Key requirements:** P-384 curve (secp384r1), 384-bit. Keys must be DER-encoded
+    /// SubjectPublicKeyInfo format.
     #[cfg(feature = "ecdsa")]
     pub fn with_ecdsa_es384(public_key_der: &[u8]) -> Self {
         Self::with_key(
@@ -741,8 +762,6 @@ mod tests {
 
     #[test]
     fn test_algorithm_policy() {
-        use crate::algorithm::AlgorithmId;
-
         let token_str = create_test_token();
         let parsed = ParsedToken::from_string(&token_str).unwrap();
 

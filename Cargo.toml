@@ -6,6 +6,9 @@ authors = ["Sebastian Müller <c@sbstjn.com>"]
 description = "Minimal, type-safe JWT validation library"
 license = "MIT"
 repository = "https://github.com/sbstjn/jwtiny"
+documentation = "https://docs.rs/jwtiny"
+homepage = "https://github.com/sbstjn/jwtiny"
+readme = "README.md"
 keywords = ["api", "authentication", "jwks", "jwt", "token"]
 categories = ["authentication", "development-tools", "security"]
 

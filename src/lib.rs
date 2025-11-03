@@ -75,16 +75,13 @@
 //! Choose verification based on the algorithm family:
 //!
 //! ```ignore
-//! // Symmetric key (HMAC)
+//! // Symmetric key (HMAC) - always enabled
 //! SignatureVerification::with_secret_hs256(b"your-256-bit-secret")
 //!
-//! // Public key (RSA/ECDSA)
-//! SignatureVerification::with_key(
-//!     Key::rsa_public(public_key_der),
-//!     AlgorithmPolicy::rs256_only(),
-//! )
+//! // Public key (RSA) - requires rsa feature
+//! SignatureVerification::with_rsa_rs256(public_key_der)
 //!
-//! // Remote JWKS fetching
+//! // Remote JWKS fetching - requires remote feature
 //! SignatureVerification::with_jwks(
 //!     http_client,
 //!     AlgorithmPolicy::recommended_asymmetric(),

@@ -3,6 +3,42 @@ use crate::error::{ClaimError, Error, Result};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Configuration for claims validation
+///
+/// This configuration allows you to customize how JWT claims are validated during
+/// the validation pipeline. You can configure temporal checks (`exp`, `nbf`, `iat`),
+/// audience requirements, clock skew tolerance, and custom validation logic.
+///
+/// # Examples
+///
+/// Using default validation configuration:
+///
+/// ```
+/// use jwtiny::ValidationConfig;
+///
+/// let config = ValidationConfig::default();
+/// ```
+///
+/// Configuring custom validation rules:
+///
+/// ```ignore
+/// use jwtiny::ValidationConfig;
+/// use jwtiny::{Error, ClaimError};
+///
+/// let config = ValidationConfig::default()
+///     .require_audience("my-api")
+///     .max_age(3600)  // Token must be < 1 hour old
+///     .clock_skew(60) // Allow 60s clock skew
+///     .custom(|claims| {
+///         // Custom validation logic
+///         if claims.subject.as_deref() == Some("admin") {
+///             Ok(())
+///         } else {
+///             Err(Error::ClaimValidationFailed(
+///                 ClaimError::Custom("Admin access required".to_string())
+///             ))
+///         }
+///     });
+/// ```
 pub struct ValidationConfig {
     /// Validate expiration time (exp claim)
     pub validate_exp: bool,

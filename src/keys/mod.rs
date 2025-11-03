@@ -6,6 +6,46 @@
 use crate::error::{Error, Result};
 
 /// A key that can be used for JWT signature verification
+///
+/// This enum provides a unified interface for different cryptographic key types used in
+/// JWT signature verification. Keys are typically constructed through [`SignatureVerification`](crate::SignatureVerification)
+/// using algorithm-specific constructors.
+///
+/// # Examples
+///
+/// Creating keys for different algorithm families:
+///
+/// ```
+/// use jwtiny::Key;
+///
+/// // Symmetric key for HMAC algorithms (always enabled)
+/// let hmac_key = Key::symmetric(b"my-secret-key");
+///
+/// // RSA public key (requires rsa feature)
+/// # #[cfg(feature = "rsa")]
+/// # {
+/// # let der_bytes = vec![0x30, 0x81, 0x9f, 0x30, 0x0d]; // example DER bytes
+/// let rsa_key = Key::rsa_public(der_bytes);
+/// # }
+///
+/// // ECDSA public key (requires ecdsa feature)
+/// # #[cfg(feature = "ecdsa")]
+/// # {
+/// # let der_bytes = vec![0x30, 0x59, 0x30, 0x13]; // example DER bytes
+/// let ecdsa_key = Key::ecdsa_public(der_bytes, jwtiny::EcdsaCurve::P256);
+/// # }
+/// ```
+///
+/// Keys can also be created from various types:
+///
+/// ```
+/// use jwtiny::Key;
+///
+/// // From byte slices, vectors, strings
+/// let key1 = Key::symmetric("my-string-secret");
+/// let key2 = Key::symmetric(b"byte-slice");
+/// let key3 = Key::symmetric(vec![1, 2, 3]);
+/// ```
 #[derive(Debug, Clone)]
 pub enum Key {
     /// Symmetric key for HMAC algorithms

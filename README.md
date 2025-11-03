@@ -21,15 +21,17 @@ Common pitfalls include algorithm confusion attacks (accepting asymmetric algori
 
 ## Features
 
-| Feature | Default | Description |
+Per default, only `hmac` support is enabled. Everything else needs to be opt-in enabled as features:
+
+| Feature | Feature | Description |
 |---------|---------|-------------|
-| `hmac` | ✅ | HMAC algorithms (HS256, HS384, HS512) — **always enabled** |
-| `rsa` | ❌ | RSA algorithms (RS256, RS384, RS512) |
-| `ecdsa` | ❌ | ECDSA algorithms (ES256, ES384) |
-| `aws-lc-rs` | ❌ | Use `aws-lc-rs` backend instead of `ring` for RSA/ECDSA |
-| `all-algorithms` | ❌ | Enable all asymmetric algorithms (RSA + ECDSA) |
-| `remote` | ❌ | Remote JWKS fetching (requires HTTP client implementation) |
-| `remote-rustls` | ❌ | HTTPS support for JWKS (provide HTTPS-capable client) |
+| `hmac` | ☑️ | HMAC algorithms (HS256, HS384, HS512) — **always enabled** |
+| `rsa` | ✅ | RSA algorithms (RS256, RS384, RS512) |
+| `ecdsa` | ✅ | ECDSA algorithms (ES256, ES384) |
+| `aws-lc-rs` | ✅ | Use `aws-lc-rs` backend instead of `ring` for RSA/ECDSA |
+| `all-algorithms` | ✅ | Enable all asymmetric algorithms (RSA + ECDSA) |
+| `remote` | ✅ | Remote JWKS fetching (requires HTTP client implementation) |
+| `remote-rustls` | ✅ | HTTPS support for JWKS (provide HTTPS-capable client) |
 
 ## Quick Start
 
@@ -275,14 +277,14 @@ Only the final `Token` type is exposed publicly. Intermediate types (`TrustedTok
 
 ### Algorithm Confusion Prevention
 
-Always restrict algorithms explicitly. Without restrictions, a token declaring `RS256` might be accepted when you only intended to allow `HS256`:
+Always restrict algorithms explicitly; an explicit policy is required. Prefer algorithm-specific constructors:
 
 ```rust
 // ✅ Correct: Only allow the algorithm you trust
-.allow_algorithms(AlgorithmPolicy::allow_only(vec![AlgorithmId::HS256]))
+SignatureVerification::with_secret_hs256(b"your-256-bit-secret")
 
-// ❌ Incorrect: Accepts any algorithm compatible with the key type
-SignatureVerification::with_secret(b"secret") // No restrictions
+// ❌ Incorrect: missing explicit policy
+// SignatureVerification::with_secret(b"secret")
 ```
 
 ### SSRF Prevention

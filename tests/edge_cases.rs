@@ -674,26 +674,20 @@ fn test_empty_signature() {
 
 #[test]
 fn test_malformed_signature() {
-    // Signature with invalid Base64URL
+    // Signature with invalid Base64URL characters
     let header_b64 = jwtiny::utils::base64url::encode(r#"{"alg":"HS256"}"#);
     let payload_b64 = jwtiny::utils::base64url::encode(r#"{"iss":"test"}"#);
 
-    // Invalid characters in signature
+    // Invalid characters in signature (! is not a valid base64url character)
     let token = format!("{}.{}.!!!", header_b64, payload_b64);
 
-    // Should fail Base64URL decode when trying to decode signature
-    // Note: Signature is only decoded during parsing (stored as string), but we decode it
-    // Actually, jwtiny stores signature_b64 as String and only decodes during verification
-    // So parsing might succeed but verification will fail
-    // Let's test what actually happens
+    // Should fail during parsing due to invalid characters
+    // We validate signature contains only valid base64url characters (A-Z, a-z, 0-9, -, _)
+    // This catches malformed tokens early, consistent with whitespace/newline validation
     let result = ParsedToken::from_string(&token);
-    // If signature decode happens during parsing, should fail with InvalidBase64
-    // If not, parsing succeeds (signature validated later)
-    // Based on code: signature_b64 is stored as String, not decoded during parsing
-    // So parsing should succeed, but verification will fail
     assert!(
-        result.is_ok(),
-        "Parsing should succeed (signature decode happens during verification)"
+        result.is_err(),
+        "Parsing should fail for invalid characters in signature"
     );
 }
 

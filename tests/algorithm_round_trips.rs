@@ -385,15 +385,9 @@ mod ecdsa_tests {
                 };
 
                 // Select algorithm based on curve
-                let (signing_alg, pkcs8_template) = match curve {
-                    jwtiny::EcdsaCurve::P256 => (
-                        &ECDSA_P256_SHA256_FIXED_SIGNING,
-                        aws_lc_rs::signature::ECDSA_P256_SHA256_FIXED_SIGNING,
-                    ),
-                    jwtiny::EcdsaCurve::P384 => (
-                        &ECDSA_P384_SHA384_FIXED_SIGNING,
-                        aws_lc_rs::signature::ECDSA_P384_SHA384_FIXED_SIGNING,
-                    ),
+                let signing_alg = match curve {
+                    jwtiny::EcdsaCurve::P256 => &ECDSA_P256_SHA256_FIXED_SIGNING,
+                    jwtiny::EcdsaCurve::P384 => &ECDSA_P384_SHA384_FIXED_SIGNING,
                 };
 
                 // Generate key pair

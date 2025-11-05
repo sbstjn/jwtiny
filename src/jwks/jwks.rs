@@ -48,12 +48,12 @@ pub struct JwkSet {
 /// let jwk_set = fetch_jwks(&client, "https://auth.example.com/.well-known/jwks.json").await?;
 /// ```
 #[cfg(feature = "remote")]
-pub async fn fetch_jwks(client: &HttpClient, jwks_uri: &str) -> Result<JwkSet> {
+pub async fn fetch_jwks(client: &dyn HttpClient, jwks_uri: &str) -> Result<JwkSet> {
     if jwks_uri.trim().is_empty() {
         return Err(Error::RemoteError("jwks: empty jwks_uri".to_string()));
     }
 
-    let bytes = client(jwks_uri.to_string()).await?;
+    let bytes = client.fetch(jwks_uri).await?;
 
     let body = std::str::from_utf8(&bytes)
         .map_err(|e| Error::RemoteError(format!("jwks: utf8 decode failed: {e}")))?;
@@ -88,7 +88,7 @@ fn jwks_cache() -> &'static Mutex<HashMap<String, (Instant, JwkSet)>> {
 ///
 /// Same as `fetch_jwks()`
 #[cfg(feature = "remote")]
-pub async fn fetch_jwks_cached(client: &HttpClient, jwks_uri: &str) -> Result<JwkSet> {
+pub async fn fetch_jwks_cached(client: &dyn HttpClient, jwks_uri: &str) -> Result<JwkSet> {
     // Check cache first (per-URI)
     if let Some(entry) = jwks_cache().lock().ok().and_then(|mut map| {
         if let Some((ts, val)) = map.get(jwks_uri).cloned() {
@@ -117,18 +117,30 @@ pub async fn fetch_jwks_cached(client: &HttpClient, jwks_uri: &str) -> Result<Jw
 #[cfg(all(test, feature = "remote"))]
 mod tests {
     use super::*;
+    use std::future::Future;
+    use std::pin::Pin;
+
+    struct MockHttpClient {
+        response: &'static str,
+    }
+
+    impl HttpClient for MockHttpClient {
+        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
+            let response = self.response.as_bytes().to_vec();
+            Box::pin(async move { Ok(response) })
+        }
+    }
 
     #[tokio::test]
     async fn test_fetch_jwks() {
-        let client: HttpClient = Box::new(|_url: String| {
-            let jwks_json = r#"{
+        let client = MockHttpClient {
+            response: r#"{
                 "keys": [
                     {"kty":"RSA","kid":"k1","n":"abc","e":"AQAB"},
                     {"kty":"EC","kid":"k2","crv":"P-256","x":"xx","y":"yy"}
                 ]
-            }"#;
-            Box::pin(async move { Ok(jwks_json.as_bytes().to_vec()) })
-        });
+            }"#,
+        };
 
         let set = fetch_jwks(&client, "https://issuer.example/jwks.json")
             .await
@@ -140,7 +152,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_jwks_empty_uri() {
-        let client: HttpClient = Box::new(|_url: String| Box::pin(async move { Ok(vec![]) }));
+        let client = MockHttpClient { response: "" };
 
         let result = fetch_jwks(&client, "").await;
         assert!(
@@ -150,8 +162,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_jwks_invalid_json() {
-        let client: HttpClient =
-            Box::new(|_url: String| Box::pin(async move { Ok(b"{ invalid json }".to_vec()) }));
+        let client = MockHttpClient {
+            response: "{ invalid json }",
+        };
 
         let result = fetch_jwks(&client, "https://issuer.example/jwks.json").await;
         assert!(
@@ -161,20 +174,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_jwks_cached() {
+        use std::sync::Arc;
         use std::sync::atomic::{AtomicU32, Ordering};
 
-        let fetch_count = std::sync::Arc::new(AtomicU32::new(0));
+        struct CountingHttpClient {
+            count: Arc<AtomicU32>,
+        }
 
-        let client: HttpClient = {
-            let count = fetch_count.clone();
-            Box::new(move |_url: String| {
-                let count = count.clone();
+        impl HttpClient for CountingHttpClient {
+            fn fetch(
+                &self,
+                _url: &str,
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
+                let count = self.count.clone();
                 Box::pin(async move {
                     count.fetch_add(1, Ordering::SeqCst);
                     let jwks_json = r#"{"keys": [{"kty":"RSA","kid":"k1","n":"abc","e":"AQAB"}]}"#;
                     Ok(jwks_json.as_bytes().to_vec())
                 })
-            })
+            }
+        }
+
+        let fetch_count = Arc::new(AtomicU32::new(0));
+        let client = CountingHttpClient {
+            count: fetch_count.clone(),
         };
 
         let uri = "https://issuer.example/jwks.json";
@@ -192,11 +215,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_jwk_optional_fields() {
-        let client: HttpClient = Box::new(|_url: String| {
-            // JWK with minimal fields
-            let jwks_json = r#"{"keys": [{"kty":"RSA"}]}"#;
-            Box::pin(async move { Ok(jwks_json.as_bytes().to_vec()) })
-        });
+        let client = MockHttpClient {
+            response: r#"{"keys": [{"kty":"RSA"}]}"#,
+        };
 
         let set = fetch_jwks(&client, "https://issuer.example/jwks.json")
             .await

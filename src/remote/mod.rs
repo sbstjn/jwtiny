@@ -18,4 +18,4 @@ pub use http::HttpClient;
 pub mod test_helper;
 
 #[cfg(all(feature = "remote", test))]
-pub use test_helper::reqwest_client;
+pub use test_helper::ReqwestClient;

@@ -28,7 +28,7 @@ all-algorithms = ["rsa", "ecdsa"]
 
 # Remote fetching features
 # `remote` now implies HTTPS via rustls by default.
-remote = ["dep:rustls", "dep:webpki-roots", "dep:rustls-pki-types"]
+remote = ["dep:rustls", "dep:webpki-roots", "dep:rustls-pki-types", "dep:spki"]
 
 [dependencies]
 # Core - minimal JSON serialization
@@ -50,6 +50,9 @@ rustls = { version = "0.23", optional = true }
 webpki-roots = { version = "0.26", optional = true }
 rustls-pki-types = { version = "1.7", optional = true }
 
+# SPKI encoding for JWK conversion (only needed with remote feature)
+spki = { version = "0.7", optional = true, default-features = false, features = ["alloc"] }
+
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 # For RSA key generation in tests
@@ -70,35 +73,18 @@ name = "multi_algorithm"
 required-features = ["all-algorithms"]
 
 [[bench]]
-name = "rsa_signature_verification"
-harness = false
-
-[[bench]]
-name = "rsa_end_to_end"
-harness = false
-
-
-
-[[bench]]
 name = "hmac_algorithms"
 harness = false
 
 [[bench]]
-name = "token_parsing"
+name = "rsa_benchmarks"
 harness = false
-
-[[bench]]
-name = "claims_validation"
-harness = false
+required-features = ["rsa"]
 
 [[bench]]
 name = "ecdsa_algorithms"
 harness = false
 required-features = ["ecdsa"]
-
-[[bench]]
-name = "algorithm_selection"
-harness = false
 
 [[bench]]
 name = "jwks_caching"

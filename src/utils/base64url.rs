@@ -51,6 +51,28 @@ pub fn encode(input: &str) -> String {
     encode_bytes(input.as_bytes())
 }
 
+/// Validate that a string contains only valid Base64URL characters
+/// Does not check for completeness (length), only character validity
+pub fn validate_chars(input: &str) -> Result<()> {
+    if input.is_empty() {
+        return Ok(());
+    }
+
+    for c in input.bytes() {
+        let valid = matches!(c,
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_'
+        );
+        if !valid {
+            return Err(Error::InvalidBase64(format!(
+                "Invalid character: {}",
+                c as char
+            )));
+        }
+    }
+
+    Ok(())
+}
+
 /// Decode Base64URL string to bytes
 pub fn decode_bytes(input: &str) -> Result<Vec<u8>> {
     if input.is_empty() {
@@ -177,6 +199,23 @@ mod tests {
     fn test_decode_invalid() {
         assert!(decode_bytes("!!!").is_err());
         assert!(decode_bytes("A").is_err()); // Incomplete
+    }
+
+    #[test]
+    fn test_validate_chars() {
+        // Valid characters
+        assert!(validate_chars("").is_ok());
+        assert!(validate_chars("ABC").is_ok());
+        assert!(validate_chars("abc123").is_ok());
+        assert!(validate_chars("signature").is_ok()); // 9 chars is invalid length but valid chars
+        assert!(validate_chars("AaBbCc-_").is_ok());
+
+        // Invalid characters
+        assert!(validate_chars("ABC ").is_err()); // space
+        assert!(validate_chars("ABC\n").is_err()); // newline
+        assert!(validate_chars("ABC+").is_err()); // + is base64, not base64url
+        assert!(validate_chars("ABC/").is_err()); // / is base64, not base64url
+        assert!(validate_chars("ABC=").is_err()); // padding not allowed
     }
 
     #[test]

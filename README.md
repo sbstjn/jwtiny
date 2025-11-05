@@ -390,6 +390,10 @@ cargo run --example multi_algorithm --features all-algorithms
 
 MIT
 
+## Development
+
+This project was developed with assistance from AI coding companions including Claude Code and Cursor. All code has been human-reviewed, tested, and verified for correctness and security.
+
 ## References
 
 - [RFC 7515](https://datatracker.ietf.org/doc/html/rfc7515) — JSON Web Signature (JWS)

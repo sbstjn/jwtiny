@@ -117,9 +117,12 @@ impl Jwk {
                 // Note: In production, this would use a logging framework
                 // For now, we'll continue without logging as Rust doesn't have a standard logger
                 // The warning is documented in the API
-                eprintln!(
-                    "jwks: warning: JWK alg field '{alg}' doesn't match token algorithm '{alg_str}'"
-                );
+                #[allow(clippy::print_stderr)]
+                {
+                    eprintln!(
+                        "jwks: warning: JWK alg field '{alg}' doesn't match token algorithm '{alg_str}'"
+                    );
+                }
             }
         }
 
@@ -255,9 +258,12 @@ pub fn find_key_by_kid<'a>(jwks: &'a crate::jwks::JwkSet, kid: Option<&str>) -> 
             } else {
                 // If multiple matches, warn (Q13-B)
                 if matches.len() > 1 {
-                    eprintln!(
-                        "jwks: warning: multiple keys found with kid '{kid}', using first match"
-                    );
+                    #[allow(clippy::print_stderr)]
+                    {
+                        eprintln!(
+                            "jwks: warning: multiple keys found with kid '{kid}', using first match"
+                        );
+                    }
                 }
                 Some(matches[0])
             }

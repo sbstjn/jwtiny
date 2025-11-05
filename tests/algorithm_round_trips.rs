@@ -401,6 +401,7 @@ mod ecdsa_tests {
                 let pkcs8_bytes = EcdsaKeyPair::generate_pkcs8(signing_alg, &rng)
                     .expect("failed to generate ECDSA key");
 
+                // aws-lc-rs does not require rng parameter for from_pkcs8
                 let key_pair = EcdsaKeyPair::from_pkcs8(signing_alg, pkcs8_bytes.as_ref())
                     .expect("failed to create EcdsaKeyPair");
 
@@ -434,7 +435,8 @@ mod ecdsa_tests {
                 let pkcs8_bytes = EcdsaKeyPair::generate_pkcs8(signing_alg, &rng)
                     .expect("failed to generate ECDSA key");
 
-                let key_pair = EcdsaKeyPair::from_pkcs8(signing_alg, pkcs8_bytes.as_ref())
+                // ring requires rng parameter for from_pkcs8
+                let key_pair = EcdsaKeyPair::from_pkcs8(signing_alg, pkcs8_bytes.as_ref(), &rng)
                     .expect("failed to create EcdsaKeyPair");
 
                 let public_key_der = key_pair.public_key().as_ref().to_vec();

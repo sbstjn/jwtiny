@@ -61,15 +61,16 @@ async fn is_jwkserve_available() -> bool {
 }
 
 #[cfg(feature = "remote")]
-/// Create an HTTP client using reqwest for fetching JWKS
-fn create_http_client() -> HttpClient {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(5))
-        .build()
-        .expect("Failed to create reqwest client");
+/// HTTP client implementation using reqwest for benchmarks
+struct ReqwestHttpClient {
+    client: reqwest::Client,
+}
 
-    Box::new(move |url: String| {
-        let client = client.clone();
+#[cfg(feature = "remote")]
+impl HttpClient for ReqwestHttpClient {
+    fn fetch(&self, url: &str) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        let client = self.client.clone();
+        let url = url.to_string();
         Box::pin(async move {
             let response = client
                 .get(&url)
@@ -92,12 +93,23 @@ fn create_http_client() -> HttpClient {
 
             Ok(bytes)
         })
-    })
+    }
+}
+
+#[cfg(feature = "remote")]
+/// Create an HTTP client using reqwest for fetching JWKS
+fn create_http_client() -> ReqwestHttpClient {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .expect("Failed to create reqwest client");
+
+    ReqwestHttpClient { client }
 }
 
 #[cfg(feature = "remote")]
 /// Discover the JWKS URI from jwkserve
-async fn discover_jwks_uri(client: &HttpClient) -> Option<String> {
+async fn discover_jwks_uri(client: &impl HttpClient) -> Option<String> {
     use jwtiny::discovery;
 
     discovery::discover_jwks_uri(JWKSERVE_URL, client)
@@ -233,7 +245,7 @@ fn bench_jwks_parsing(c: &mut Criterion) {
 
     // Fetch raw bytes once
     let raw_bytes = match rt.block_on(async {
-        let bytes = client(jwks_uri.clone()).await?;
+        let bytes = client.fetch(&jwks_uri).await?;
         Ok::<Vec<u8>, Error>(bytes)
     }) {
         Ok(bytes) => bytes,

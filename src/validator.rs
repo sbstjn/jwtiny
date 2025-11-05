@@ -47,7 +47,7 @@ pub struct SignatureVerification {
     key: Option<Key>,
     algorithm_policy: AlgorithmPolicy,
     #[cfg(feature = "remote")]
-    http_client: Option<Arc<crate::remote::http::HttpClient>>,
+    http_client: Option<Arc<dyn crate::remote::http::HttpClient>>,
     #[cfg(feature = "remote")]
     use_cache: bool,
 }
@@ -227,7 +227,7 @@ impl SignatureVerification {
     /// let token = TokenValidator::new(parsed)
     ///     .verify_signature(
     ///         SignatureVerification::with_jwks(
-    ///             http_client,
+    ///             http_client,  // Takes ownership; clone if needed
     ///             AlgorithmPolicy::recommended_asymmetric(),
     ///             true
     ///         )
@@ -237,7 +237,7 @@ impl SignatureVerification {
     /// ```
     #[cfg(feature = "remote")]
     pub fn with_jwks(
-        client: crate::remote::http::HttpClient,
+        client: impl crate::remote::http::HttpClient + 'static,
         policy: AlgorithmPolicy,
         use_cache: bool,
     ) -> Self {
@@ -269,7 +269,7 @@ impl SignatureVerification {
 
     /// Get HTTP client for JWKS (if configured)
     #[cfg(feature = "remote")]
-    fn http_client(&self) -> Option<&crate::remote::http::HttpClient> {
+    fn http_client(&self) -> Option<&dyn crate::remote::http::HttpClient> {
         self.http_client.as_ref().map(|arc| arc.as_ref())
     }
 

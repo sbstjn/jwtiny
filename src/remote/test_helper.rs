@@ -1,21 +1,41 @@
 //! Test helper implementation of HttpClient
 //!
-//! This module provides a test helper for creating HttpClient function pointers
+//! This module provides a test helper for creating HttpClient implementations
 //! using `reqwest` for testing. It's only available in tests.
 
 #[cfg(feature = "remote")]
 use crate::error::Error;
 #[cfg(feature = "remote")]
 use crate::remote::http::HttpClient;
+#[cfg(feature = "remote")]
+use std::future::Future;
+#[cfg(feature = "remote")]
+use std::pin::Pin;
 
-/// Create a test HTTP client using reqwest
+/// Test HTTP client using reqwest
 ///
-/// This returns an HttpClient function pointer that uses reqwest internally.
+/// This implements the HttpClient trait using reqwest internally.
 /// It's only intended for testing.
 #[cfg(all(feature = "remote", test))]
-pub fn reqwest_client() -> HttpClient {
-    Box::new(move |url: String| {
-        let client = reqwest::Client::new();
+pub struct ReqwestClient {
+    client: reqwest::Client,
+}
+
+#[cfg(all(feature = "remote", test))]
+impl ReqwestClient {
+    /// Create a new ReqwestClient
+    pub fn new() -> Self {
+        Self {
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[cfg(all(feature = "remote", test))]
+impl HttpClient for ReqwestClient {
+    fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        let client = self.client.clone();
+        let url = url.to_string();
         Box::pin(async move {
             let response = client
                 .get(&url)
@@ -38,5 +58,5 @@ pub fn reqwest_client() -> HttpClient {
 
             Ok(bytes)
         })
-    })
+    }
 }

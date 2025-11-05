@@ -10,6 +10,8 @@
 async fn end_to_end_verify_rs256_from_jwkserve() {
     use jwtiny::remote::HttpClient;
     use jwtiny::*;
+    use std::future::Future;
+    use std::pin::Pin;
 
     // Health check: verify jwkserve is running
     if !is_jwkserve_up().await {
@@ -18,30 +20,42 @@ async fn end_to_end_verify_rs256_from_jwkserve() {
         return;
     }
 
-    // Create HTTP client function pointer using reqwest
+    // Create HTTP client implementation using reqwest
+    #[derive(Clone)]
+    struct ReqwestHttpClient {
+        client: reqwest::Client,
+    }
+
+    impl HttpClient for ReqwestHttpClient {
+        fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            let client = self.client.clone();
+            let url = url.to_string();
+            Box::pin(async move {
+                let response = client
+                    .get(&url)
+                    .send()
+                    .await
+                    .map_err(|e| Error::RemoteError(format!("network: {}", e)))?;
+                if !response.status().is_success() {
+                    return Err(Error::RemoteError(format!(
+                        "http: status {}",
+                        response.status()
+                    )));
+                }
+                let bytes = response
+                    .bytes()
+                    .await
+                    .map_err(|e| Error::RemoteError(format!("network: {}", e)))?
+                    .to_vec();
+                Ok(bytes)
+            })
+        }
+    }
+
     let reqwest_client = reqwest::Client::new();
-    let http_client: HttpClient = Box::new(move |url: String| {
-        let client = reqwest::Client::new();
-        Box::pin(async move {
-            let response = client
-                .get(&url)
-                .send()
-                .await
-                .map_err(|e| Error::RemoteError(format!("network: {}", e)))?;
-            if !response.status().is_success() {
-                return Err(Error::RemoteError(format!(
-                    "http: status {}",
-                    response.status()
-                )));
-            }
-            let bytes = response
-                .bytes()
-                .await
-                .map_err(|e| Error::RemoteError(format!("network: {}", e)))?
-                .to_vec();
-            Ok(bytes)
-        })
-    });
+    let http_client = ReqwestHttpClient {
+        client: reqwest_client.clone(),
+    };
 
     // 1) Ask jwkserve to mint a token. Endpoint and payload follow jwkserve's API:
     // POST /sign with claims; expects JSON { token: "..." }
@@ -107,7 +121,7 @@ async fn end_to_end_verify_rs256_from_jwkserve() {
             }
         })
         .verify_signature(SignatureVerification::with_jwks(
-            http_client,
+            http_client.clone(),
             AlgorithmPolicy::rs256_only(),
             true,
         ))

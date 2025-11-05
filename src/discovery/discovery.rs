@@ -61,9 +61,9 @@ fn well_known_url_for_issuer(issuer: &str) -> Result<String> {
 /// let jwks_uri = discover_jwks_uri("https://auth.example.com", &client).await?;
 /// ```
 #[cfg(feature = "remote")]
-pub async fn discover_jwks_uri(issuer: &str, client: &HttpClient) -> Result<String> {
+pub async fn discover_jwks_uri(issuer: &str, client: &impl HttpClient) -> Result<String> {
     let url = well_known_url_for_issuer(issuer)?;
-    let bytes = client(url.clone()).await?;
+    let bytes = client.fetch(&url).await?;
 
     let body = std::str::from_utf8(&bytes)
         .map_err(|e| Error::RemoteError(format!("discovery: utf8 decode failed: {e}")))?;
@@ -104,7 +104,7 @@ fn discovery_cache() -> &'static Mutex<HashMap<String, (Instant, String)>> {
 ///
 /// Same as `discover_jwks_uri()`
 #[cfg(feature = "remote")]
-pub async fn discover_jwks_uri_cached(issuer: &str, client: &HttpClient) -> Result<String> {
+pub async fn discover_jwks_uri_cached(issuer: &str, client: &impl HttpClient) -> Result<String> {
     // Check cache first (per-issuer)
     if let Some(entry) = discovery_cache().lock().ok().and_then(|mut map| {
         if let Some((ts, val)) = map.get(issuer).cloned() {
@@ -147,14 +147,23 @@ mod tests {
         assert!(well_known_url_for_issuer("").is_err());
     }
 
+    struct MockHttpClient {
+        response: &'static str,
+    }
+
+    impl HttpClient for MockHttpClient {
+        fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            assert!(url.contains("/.well-known/openid-configuration"));
+            let response = self.response.as_bytes().to_vec();
+            Box::pin(async move { Ok(response) })
+        }
+    }
+
     #[tokio::test]
     async fn test_discover_jwks_uri() {
-        // Mock HTTP client that returns a test discovery document
-        let client: HttpClient = Box::new(|url: String| {
-            assert!(url.contains("/.well-known/openid-configuration"));
-            let body = r#"{ "jwks_uri": "https://issuer.example/.well-known/jwks.json" }"#;
-            Box::pin(async move { Ok(body.as_bytes().to_vec()) })
-        });
+        let client = MockHttpClient {
+            response: r#"{ "jwks_uri": "https://issuer.example/.well-known/jwks.json" }"#,
+        };
 
         let uri = discover_jwks_uri("https://issuer.example", &client)
             .await
@@ -162,12 +171,18 @@ mod tests {
         assert_eq!(uri, "https://issuer.example/.well-known/jwks.json");
     }
 
-    #[tokio::test]
-    async fn test_discover_jwks_uri_empty() {
-        let client: HttpClient = Box::new(|_url: String| {
+    struct EmptyJwksUriMockClient;
+
+    impl HttpClient for EmptyJwksUriMockClient {
+        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
             let body = r#"{ "jwks_uri": "" }"#;
             Box::pin(async move { Ok(body.as_bytes().to_vec()) })
-        });
+        }
+    }
+
+    #[tokio::test]
+    async fn test_discover_jwks_uri_empty() {
+        let client = EmptyJwksUriMockClient;
 
         let result = discover_jwks_uri("https://issuer.example", &client).await;
         assert!(
@@ -178,19 +193,26 @@ mod tests {
     #[tokio::test]
     async fn test_discover_jwks_uri_cached() {
         use std::sync::atomic::{AtomicU32, Ordering};
+        use std::sync::Arc;
 
-        let fetch_count = std::sync::Arc::new(AtomicU32::new(0));
+        struct CountingHttpClient {
+            count: Arc<AtomicU32>,
+        }
 
-        let client: HttpClient = {
-            let count = fetch_count.clone();
-            Box::new(move |_url: String| {
-                let count = count.clone();
+        impl HttpClient for CountingHttpClient {
+            fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+                let count = self.count.clone();
                 Box::pin(async move {
                     count.fetch_add(1, Ordering::SeqCst);
                     let body = r#"{ "jwks_uri": "https://issuer.example/.well-known/jwks.json" }"#;
                     Ok(body.as_bytes().to_vec())
                 })
-            })
+            }
+        }
+
+        let fetch_count = Arc::new(AtomicU32::new(0));
+        let client = CountingHttpClient {
+            count: fetch_count.clone(),
         };
 
         // First fetch - should make HTTP request
@@ -208,10 +230,17 @@ mod tests {
         assert_eq!(fetch_count.load(Ordering::SeqCst), 1); // Still 1, used cache
     }
 
+    struct InvalidJsonMockClient;
+
+    impl HttpClient for InvalidJsonMockClient {
+        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            Box::pin(async move { Ok(b"{ invalid json }".to_vec()) })
+        }
+    }
+
     #[tokio::test]
     async fn test_discover_jwks_uri_invalid_json() {
-        let client: HttpClient =
-            Box::new(|_url: String| Box::pin(async move { Ok(b"{ invalid json }".to_vec()) }));
+        let client = InvalidJsonMockClient;
 
         let result = discover_jwks_uri("https://issuer.example", &client).await;
         assert!(

@@ -70,35 +70,18 @@ name = "multi_algorithm"
 required-features = ["all-algorithms"]
 
 [[bench]]
-name = "rsa_signature_verification"
-harness = false
-
-[[bench]]
-name = "rsa_end_to_end"
-harness = false
-
-
-
-[[bench]]
 name = "hmac_algorithms"
 harness = false
 
 [[bench]]
-name = "token_parsing"
+name = "rsa_benchmarks"
 harness = false
-
-[[bench]]
-name = "claims_validation"
-harness = false
+required-features = ["rsa"]
 
 [[bench]]
 name = "ecdsa_algorithms"
 harness = false
 required-features = ["ecdsa"]
-
-[[bench]]
-name = "algorithm_selection"
-harness = false
 
 [[bench]]
 name = "jwks_caching"

@@ -1,3 +1,8 @@
+//! RSA signature verification benchmarks
+//!
+//! Comprehensive benchmarks for RSA signature verification,
+//! including signature-only and end-to-end validation.
+
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jwtiny::*;
 
@@ -51,17 +56,43 @@ fn generate_rs256_token() -> (String, Key) {
 }
 
 #[cfg(feature = "rsa")]
+fn bench_rsa_signature_verification(c: &mut Criterion) {
+    let (token_str, pub_key) = generate_rs256_token();
+
+    let mut group = c.benchmark_group("rsa_signature");
+
+    // Benchmark signature verification only (minimal overhead)
+    group.bench_function("verify_only", |b| {
+        b.iter(|| {
+            let parsed = ParsedToken::from_string(&token_str).unwrap();
+            let _ = TokenValidator::new(parsed)
+                .danger_skip_issuer_validation()
+                .verify_signature(SignatureVerification::with_key(
+                    pub_key.clone(),
+                    AlgorithmPolicy::rs256_only(),
+                ))
+                .validate_token(ValidationConfig::default().skip_all())
+                .run();
+        });
+    });
+
+    group.finish();
+}
+
+#[cfg(feature = "rsa")]
 fn bench_rsa_end_to_end(c: &mut Criterion) {
     let (token_str, pub_key) = generate_rs256_token();
 
     let mut group = c.benchmark_group("rsa_end_to_end");
 
+    // Benchmark parsing only (baseline)
     group.bench_function("parse_only", |b| {
         b.iter(|| {
             let _ = ParsedToken::from_string(black_box(&token_str));
         });
     });
 
+    // Benchmark parsing + signature verification
     group.bench_function("parse_and_verify", |b| {
         b.iter(|| {
             let parsed = ParsedToken::from_string(&token_str).unwrap();
@@ -76,7 +107,8 @@ fn bench_rsa_end_to_end(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("full_verification_with_claims", |b| {
+    // Benchmark full validation with claims
+    group.bench_function("full_with_claims", |b| {
         b.iter(|| {
             let parsed = ParsedToken::from_string(&token_str).unwrap();
             let _ = TokenValidator::new(parsed)
@@ -98,9 +130,14 @@ fn bench_rsa_end_to_end(c: &mut Criterion) {
 }
 
 #[cfg(not(feature = "rsa"))]
+fn bench_rsa_signature_verification(_c: &mut Criterion) {
+    // No-op when RSA feature is disabled
+}
+
+#[cfg(not(feature = "rsa"))]
 fn bench_rsa_end_to_end(_c: &mut Criterion) {
     // No-op when RSA feature is disabled
 }
 
-criterion_group!(benches, bench_rsa_end_to_end);
+criterion_group!(benches, bench_rsa_signature_verification, bench_rsa_end_to_end);
 criterion_main!(benches);

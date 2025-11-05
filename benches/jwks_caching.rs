@@ -239,7 +239,7 @@ fn bench_jwks_parsing(c: &mut Criterion) {
     }
 
     let client = create_http_client();
-    let jwks_uri = match rt.block_on(discover_jwks_uri(client.as_ref())) {
+    let jwks_uri = match rt.block_on(discover_jwks_uri(&client)) {
         Some(uri) => uri,
         None => {
             eprintln!("SKIP: Failed to discover JWKS URI");

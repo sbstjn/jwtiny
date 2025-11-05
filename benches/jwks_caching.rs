@@ -113,7 +113,7 @@ fn create_http_client() -> ReqwestHttpClient {
 
 #[cfg(feature = "remote")]
 /// Discover the JWKS URI from jwkserve
-async fn discover_jwks_uri(client: &impl HttpClient) -> Option<String> {
+async fn discover_jwks_uri(client: &dyn HttpClient) -> Option<String> {
     use jwtiny::discovery;
 
     discovery::discover_jwks_uri(JWKSERVE_URL, client)
@@ -138,7 +138,7 @@ fn bench_jwks_cache_hit(c: &mut Criterion) {
     let client = Arc::new(create_http_client());
 
     // First, fetch once to populate cache
-    let jwks_uri = match rt.block_on(discover_jwks_uri(&client)) {
+    let jwks_uri = match rt.block_on(discover_jwks_uri(client.as_ref())) {
         Some(uri) => uri,
         None => {
             eprintln!("SKIP: Failed to discover JWKS URI");
@@ -147,7 +147,7 @@ fn bench_jwks_cache_hit(c: &mut Criterion) {
     };
 
     if rt
-        .block_on(jwks::fetch_jwks_cached(&client, &jwks_uri))
+        .block_on(jwks::fetch_jwks_cached(client.as_ref(), &jwks_uri))
         .is_err()
     {
         eprintln!("SKIP: Failed to fetch JWKS");
@@ -163,7 +163,7 @@ fn bench_jwks_cache_hit(c: &mut Criterion) {
         let client = client.clone();
         b.iter(|| {
             rt.block_on(async {
-                let _ = jwks::fetch_jwks_cached(&client, &jwks_uri).await;
+                let _ = jwks::fetch_jwks_cached(client.as_ref(), &jwks_uri).await;
             })
         });
     });
@@ -186,7 +186,7 @@ fn bench_jwks_cache_miss(c: &mut Criterion) {
     }
 
     let client = Arc::new(create_http_client());
-    let jwks_uri = match rt.block_on(discover_jwks_uri(&client)) {
+    let jwks_uri = match rt.block_on(discover_jwks_uri(client.as_ref())) {
         Some(uri) => uri,
         None => {
             eprintln!("SKIP: Failed to discover JWKS URI");
@@ -216,7 +216,7 @@ fn bench_jwks_cache_miss(c: &mut Criterion) {
                         .as_nanos()
                 );
                 // Use non-cached fetch to simulate cache miss
-                let _ = jwks::fetch_jwks(&client, &unique_uri).await;
+                let _ = jwks::fetch_jwks(client.as_ref(), &unique_uri).await;
             })
         });
     });
@@ -239,7 +239,7 @@ fn bench_jwks_parsing(c: &mut Criterion) {
     }
 
     let client = create_http_client();
-    let jwks_uri = match rt.block_on(discover_jwks_uri(&client)) {
+    let jwks_uri = match rt.block_on(discover_jwks_uri(client.as_ref())) {
         Some(uri) => uri,
         None => {
             eprintln!("SKIP: Failed to discover JWKS URI");
@@ -288,7 +288,7 @@ fn bench_jwks_cache_concurrent(c: &mut Criterion) {
     }
 
     let client = Arc::new(create_http_client());
-    let jwks_uri = match rt.block_on(discover_jwks_uri(&client)) {
+    let jwks_uri = match rt.block_on(discover_jwks_uri(client.as_ref())) {
         Some(uri) => uri,
         None => {
             eprintln!("SKIP: Failed to discover JWKS URI");
@@ -298,7 +298,7 @@ fn bench_jwks_cache_concurrent(c: &mut Criterion) {
 
     // Pre-populate cache
     if rt
-        .block_on(jwks::fetch_jwks_cached(&client, &jwks_uri))
+        .block_on(jwks::fetch_jwks_cached(client.as_ref(), &jwks_uri))
         .is_err()
     {
         eprintln!("SKIP: Failed to fetch JWKS");
@@ -324,7 +324,7 @@ fn bench_jwks_cache_concurrent(c: &mut Criterion) {
                                 let jwks_uri = jwks_uri.clone();
                                 let client = client.clone();
                                 tokio::spawn(async move {
-                                    jwks::fetch_jwks_cached(&client, &jwks_uri).await
+                                    jwks::fetch_jwks_cached(client.as_ref(), &jwks_uri).await
                                 })
                             })
                             .collect();
@@ -356,7 +356,7 @@ fn bench_jwks_end_to_end(c: &mut Criterion) {
     }
 
     let client = Arc::new(create_http_client());
-    let jwks_uri = match rt.block_on(discover_jwks_uri(&client)) {
+    let jwks_uri = match rt.block_on(discover_jwks_uri(client.as_ref())) {
         Some(uri) => uri,
         None => {
             eprintln!("SKIP: Failed to discover JWKS URI");
@@ -382,7 +382,7 @@ fn bench_jwks_end_to_end(c: &mut Criterion) {
                         .unwrap()
                         .as_nanos()
                 );
-                let _ = jwks::fetch_jwks(&client, &unique_uri).await;
+                let _ = jwks::fetch_jwks(client.as_ref(), &unique_uri).await;
             })
         });
     });
@@ -393,7 +393,7 @@ fn bench_jwks_end_to_end(c: &mut Criterion) {
         let client = client.clone();
         b.iter(|| {
             rt.block_on(async {
-                let _ = jwks::fetch_jwks_cached(&client, &jwks_uri).await;
+                let _ = jwks::fetch_jwks_cached(client.as_ref(), &jwks_uri).await;
             })
         });
     });

@@ -36,7 +36,7 @@ impl Algorithm for ES256 {
             signing_input,
             signature,
             ecdsa_key.as_der(),
-            &signature::ECDSA_P256_SHA256_ASN1,
+            &signature::ECDSA_P256_SHA256_FIXED,
         )
     }
 }
@@ -62,7 +62,7 @@ impl Algorithm for ES384 {
             signing_input,
             signature,
             ecdsa_key.as_der(),
-            &signature::ECDSA_P384_SHA384_ASN1,
+            &signature::ECDSA_P384_SHA384_FIXED,
         )
     }
 }
@@ -91,14 +91,14 @@ mod tests {
     use super::*;
     use ring::rand::SystemRandom;
     use ring::signature::{
-        ECDSA_P256_SHA256_ASN1_SIGNING, ECDSA_P384_SHA384_ASN1_SIGNING, EcdsaKeyPair, KeyPair,
+        ECDSA_P256_SHA256_FIXED_SIGNING, ECDSA_P384_SHA384_FIXED_SIGNING, EcdsaKeyPair, KeyPair,
     };
 
     fn generate_ecdsa_keypair(curve: EcdsaCurve) -> (Vec<u8>, Vec<u8>) {
         let rng = SystemRandom::new();
         let alg = match curve {
-            EcdsaCurve::P256 => &ECDSA_P256_SHA256_ASN1_SIGNING,
-            EcdsaCurve::P384 => &ECDSA_P384_SHA384_ASN1_SIGNING,
+            EcdsaCurve::P256 => &ECDSA_P256_SHA256_FIXED_SIGNING,
+            EcdsaCurve::P384 => &ECDSA_P384_SHA384_FIXED_SIGNING,
         };
 
         let pkcs8_bytes = EcdsaKeyPair::generate_pkcs8(alg, &rng).expect("Failed to generate key");
@@ -112,8 +112,8 @@ mod tests {
     fn sign_ecdsa(data: &[u8], private_key_der: &[u8], curve: EcdsaCurve) -> Vec<u8> {
         let rng = SystemRandom::new();
         let alg = match curve {
-            EcdsaCurve::P256 => &ECDSA_P256_SHA256_ASN1_SIGNING,
-            EcdsaCurve::P384 => &ECDSA_P384_SHA384_ASN1_SIGNING,
+            EcdsaCurve::P256 => &ECDSA_P256_SHA256_FIXED_SIGNING,
+            EcdsaCurve::P384 => &ECDSA_P384_SHA384_FIXED_SIGNING,
         };
 
         let key_pair =

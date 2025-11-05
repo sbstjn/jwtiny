@@ -125,7 +125,7 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
     // Create SubjectPublicKeyInfo
     let subject_public_key = spki::der::asn1::BitStringRef::new(0, &rsa_public_key)
         .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
-        .to_owned();
+        .into_owned();
 
     let spki = SubjectPublicKeyInfoOwned {
         algorithm,
@@ -232,7 +232,7 @@ pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<
     // Create SubjectPublicKeyInfo
     let subject_public_key = spki::der::asn1::BitStringRef::new(0, &point)
         .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
-        .to_owned();
+        .into_owned();
 
     let spki = SubjectPublicKeyInfoOwned {
         algorithm,

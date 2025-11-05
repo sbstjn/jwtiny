@@ -371,12 +371,23 @@ mod integration_tests {
         use super::*;
         use crate::jwks::resolve_key_from_issuer;
         use crate::remote::http::HttpClient;
+        use std::future::Future;
+        use std::pin::Pin;
 
         // Mock HTTP client for testing
-        fn mock_http_client(discovery_response: String, jwks_response: String) -> HttpClient {
-            Box::new(move |url: String| {
-                let dr = discovery_response.clone();
-                let jr = jwks_response.clone();
+        struct MockHttpClient {
+            discovery_response: String,
+            jwks_response: String,
+        }
+
+        impl HttpClient for MockHttpClient {
+            fn fetch(
+                &self,
+                url: &str,
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+                let url = url.to_string();
+                let dr = self.discovery_response.clone();
+                let jr = self.jwks_response.clone();
                 Box::pin(async move {
                     if url.contains("/.well-known/openid-configuration") {
                         Ok(dr.as_bytes().to_vec())
@@ -386,7 +397,14 @@ mod integration_tests {
                         Err(Error::RemoteError(format!("unexpected url: {}", url)))
                     }
                 })
-            })
+            }
+        }
+
+        fn mock_http_client(discovery_response: String, jwks_response: String) -> MockHttpClient {
+            MockHttpClient {
+                discovery_response,
+                jwks_response,
+            }
         }
 
         #[tokio::test]

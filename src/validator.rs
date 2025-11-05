@@ -599,7 +599,11 @@ impl TokenValidator {
     /// let client = /* your HTTP client */;
     /// let token = TokenValidator::new(parsed)
     ///     .ensure_issuer(|iss| Ok(iss == "https://auth.example.com"))
-    ///     .verify_signature(SignatureVerification::with_jwks(client, true))
+    ///     .verify_signature(SignatureVerification::with_jwks(
+    ///         client,
+    ///         AlgorithmPolicy::recommended_asymmetric(),
+    ///         true  // use_cache
+    ///     ))
     ///     .validate_token(ValidationConfig::default())
     ///     .run_async()
     ///     .await?;

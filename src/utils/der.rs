@@ -39,8 +39,8 @@ use crate::keys::EcdsaCurve;
 /// ```
 #[cfg(all(feature = "rsa", feature = "remote"))]
 pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
-    use spki::der::{Encode, SliceWriter, Writer, asn1::UintRef};
-    use spki::{AlgorithmIdentifierOwned, ObjectIdentifier, SubjectPublicKeyInfoOwned};
+    use spki::der::{Encode, Writer, asn1::UintRef};
+    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 
     if n.is_empty() || e.is_empty() {
         return Err(Error::RemoteError(
@@ -124,13 +124,12 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
 
     // Create SubjectPublicKeyInfo
     let subject_public_key = spki::der::asn1::BitStringRef::new(0, &rsa_public_key)
-        .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?;
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
+        .to_owned();
 
     let spki = SubjectPublicKeyInfoOwned {
         algorithm,
-        subject_public_key: subject_public_key
-            .to_owned()
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to convert bit string: {e}")))?,
+        subject_public_key,
     };
 
     // Encode to DER
@@ -160,7 +159,7 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
 /// The point is encoded in uncompressed format: 04 || x || y
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
 pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<u8>> {
-    use spki::der::{Decode, Encode, asn1::ObjectIdentifier};
+    use spki::der::{Decode, Encode};
     use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 
     if x.is_empty() || y.is_empty() {
@@ -232,13 +231,12 @@ pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<
 
     // Create SubjectPublicKeyInfo
     let subject_public_key = spki::der::asn1::BitStringRef::new(0, &point)
-        .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?;
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
+        .to_owned();
 
     let spki = SubjectPublicKeyInfoOwned {
         algorithm,
-        subject_public_key: subject_public_key
-            .to_owned()
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to convert bit string: {e}")))?,
+        subject_public_key,
     };
 
     // Encode to DER

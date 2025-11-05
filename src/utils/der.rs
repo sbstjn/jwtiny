@@ -1,78 +1,29 @@
-//! DER encoding utilities for converting JWK formats to DER SubjectPublicKeyInfo
+//! SPKI (SubjectPublicKeyInfo) encoding for converting JWK formats to DER
+//!
+//! This module uses the `spki` crate from RustCrypto for safe, standards-compliant
+//! SPKI encoding instead of hand-rolling DER encoding.
 
-#[cfg(all(any(feature = "rsa", feature = "ecdsa"), feature = "remote"))]
+#[cfg(all(feature = "rsa", feature = "remote"))]
 use crate::error::{Error, Result};
 
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
-use crate::keys::EcdsaCurve;
-
-#[cfg(all(any(feature = "rsa", feature = "ecdsa"), feature = "remote"))]
-fn der_len(len: usize) -> Vec<u8> {
-    if len < 0x80 {
-        vec![len as u8]
-    } else {
-        let mut tmp = Vec::new();
-        let mut n = len;
-        while n > 0 {
-            tmp.push((n & 0xFF) as u8);
-            n >>= 8;
-        }
-        tmp.reverse();
-        let mut v = Vec::with_capacity(1 + tmp.len());
-        v.push(0x80 | (tmp.len() as u8));
-        v.extend_from_slice(&tmp);
-        v
-    }
-}
-
-#[cfg(all(feature = "rsa", feature = "remote"))]
-fn der_integer(mut bytes: Vec<u8>) -> Vec<u8> {
-    // Ensure positive INTEGER: if MSB set, prepend 0x00
-    if bytes.first().is_some_and(|b| b & 0x80 != 0) {
-        let mut prefixed = Vec::with_capacity(bytes.len() + 1);
-        prefixed.push(0x00);
-        prefixed.extend_from_slice(&bytes);
-        bytes = prefixed;
-    }
-    let mut out = Vec::with_capacity(2 + bytes.len());
-    out.push(0x02);
-    out.extend_from_slice(&der_len(bytes.len()));
-    out.extend_from_slice(&bytes);
-    out
-}
-
-#[cfg(all(any(feature = "rsa", feature = "ecdsa"), feature = "remote"))]
-fn der_sequence(children: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(2 + children.len());
-    out.push(0x30);
-    out.extend_from_slice(&der_len(children.len()));
-    out.extend_from_slice(children);
-    out
-}
-
-#[cfg(all(any(feature = "rsa", feature = "ecdsa"), feature = "remote"))]
-fn der_bit_string(bytes: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(3 + bytes.len());
-    out.push(0x03);
-    out.extend_from_slice(&der_len(bytes.len() + 1));
-    out.push(0x00); // 0 unused bits
-    out.extend_from_slice(bytes);
-    out
-}
+use crate::{error::{Error, Result}, keys::EcdsaCurve};
 
 /// Build SubjectPublicKeyInfo DER for RSA from modulus (n) and exponent (e) bytes
 ///
 /// This function constructs a DER-encoded SubjectPublicKeyInfo structure
-/// suitable for use with ring's RSA verification functions.
+/// suitable for use with ring's or aws-lc-rs's RSA verification functions.
+///
+/// Uses the `spki` crate for safe, standards-compliant encoding.
 ///
 /// # Arguments
 ///
-/// * `n` - RSA modulus bytes (big-endian)
-/// * `e` - RSA exponent bytes (big-endian)
+/// * `n` - RSA modulus bytes (big-endian, unsigned integer)
+/// * `e` - RSA exponent bytes (big-endian, unsigned integer)
 ///
 /// # Errors
 ///
-/// Returns `Error::RemoteError` if n or e is empty.
+/// Returns `Error::RemoteError` if n or e is empty, or if encoding fails.
 ///
 /// # Example
 ///
@@ -85,44 +36,99 @@ fn der_bit_string(bytes: &[u8]) -> Vec<u8> {
 /// ```
 #[cfg(all(feature = "rsa", feature = "remote"))]
 pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
+    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
+    use spki::der::{Encode, asn1::UintRef};
+
     if n.is_empty() || e.is_empty() {
         return Err(Error::RemoteError(
             "jwks: rsa key missing n or e".to_string(),
         ));
     }
 
-    // RSAPublicKey = SEQUENCE { n INTEGER, e INTEGER }
-    let n_int = der_integer(n.to_vec());
-    let e_int = der_integer(e.to_vec());
-    let mut rsapk = Vec::with_capacity(n_int.len() + e_int.len() + 10);
-    rsapk.extend_from_slice(&n_int);
-    rsapk.extend_from_slice(&e_int);
-    let rsapk_seq = der_sequence(&rsapk);
+    // RSA encryption OID: 1.2.840.113549.1.1.1
+    const RSA_ENCRYPTION_OID: &str = "1.2.840.113549.1.1.1";
 
-    // AlgorithmIdentifier for rsaEncryption OID 1.2.840.113549.1.1.1 with NULL params
-    const RSA_ENC_OID: &[u8] = &[
-        0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01,
-    ];
-    const NULL_PARAM: &[u8] = &[0x05, 0x00];
-    let mut alg_seq_children = Vec::with_capacity(RSA_ENC_OID.len() + NULL_PARAM.len());
-    alg_seq_children.extend_from_slice(RSA_ENC_OID);
-    alg_seq_children.extend_from_slice(NULL_PARAM);
-    let alg_id = der_sequence(&alg_seq_children);
+    // Build RSAPublicKey SEQUENCE { modulus INTEGER, publicExponent INTEGER }
+    // We need to encode this as a DER sequence manually since spki expects the full key
+    let n_uint = UintRef::new(n)
+        .map_err(|e| Error::RemoteError(format!("jwks: invalid RSA modulus: {e}")))?;
+    let e_uint = UintRef::new(e)
+        .map_err(|e| Error::RemoteError(format!("jwks: invalid RSA exponent: {e}")))?;
 
-    // SubjectPublicKey BIT STRING of RSAPublicKey DER
-    let spk_bitstr = der_bit_string(&rsapk_seq);
+    // Encode the RSAPublicKey as a SEQUENCE
+    let rsa_public_key = {
+        use spki::der::SliceWriter;
 
-    // SubjectPublicKeyInfo = SEQUENCE { AlgorithmIdentifier, SubjectPublicKey }
-    let mut spki_children = Vec::with_capacity(alg_id.len() + spk_bitstr.len());
-    spki_children.extend_from_slice(&alg_id);
-    spki_children.extend_from_slice(&spk_bitstr);
-    Ok(der_sequence(&spki_children))
+        // Calculate size needed
+        let n_der = n_uint.to_der().map_err(|e|
+            Error::RemoteError(format!("jwks: failed to encode modulus: {e}")))?;
+        let e_der = e_uint.to_der().map_err(|e|
+            Error::RemoteError(format!("jwks: failed to encode exponent: {e}")))?;
+
+        // Build SEQUENCE containing both INTEGERs
+        let total_len = n_der.len() + e_der.len() + 10; // +10 for SEQUENCE header overhead
+        let mut buf = vec![0u8; total_len];
+        let mut writer = SliceWriter::new(&mut buf);
+
+        // SEQUENCE tag
+        writer.write(&[0x30]).map_err(|e|
+            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+
+        // Length
+        let content_len = n_der.len() + e_der.len();
+        if content_len < 0x80 {
+            writer.write(&[content_len as u8]).map_err(|e|
+                Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        } else {
+            let len_bytes = if content_len <= 0xFF {
+                vec![0x81, content_len as u8]
+            } else if content_len <= 0xFFFF {
+                vec![0x82, (content_len >> 8) as u8, (content_len & 0xFF) as u8]
+            } else {
+                return Err(Error::RemoteError("jwks: RSA key too large".to_string()));
+            };
+            writer.write(&len_bytes).map_err(|e|
+                Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        }
+
+        // Content
+        writer.write(&n_der).map_err(|e|
+            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        writer.write(&e_der).map_err(|e|
+            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+
+        let written = writer.finish().map_err(|e|
+            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        buf.truncate(written.len());
+        buf
+    };
+
+    // Create AlgorithmIdentifier with RSA OID and NULL parameters
+    let algorithm = AlgorithmIdentifierOwned {
+        oid: RSA_ENCRYPTION_OID.parse()
+            .map_err(|e| Error::RemoteError(format!("jwks: invalid OID: {e}")))?,
+        parameters: Some(spki::der::asn1::AnyRef::from(spki::der::asn1::Null).into()),
+    };
+
+    // Create SubjectPublicKeyInfo
+    let spki = SubjectPublicKeyInfoOwned {
+        algorithm,
+        subject_public_key: spki::der::asn1::BitStringRef::new(0, &rsa_public_key)
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
+            .into(),
+    };
+
+    // Encode to DER
+    spki.to_der()
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to encode SPKI: {e}")))
 }
 
 /// Build SubjectPublicKeyInfo DER for ECDSA from x and y coordinates
 ///
 /// This function constructs a DER-encoded SubjectPublicKeyInfo structure
-/// suitable for use with ring's ECDSA verification functions.
+/// suitable for use with ring's or aws-lc-rs's ECDSA verification functions.
+///
+/// Uses the `spki` crate for safe, standards-compliant encoding.
 ///
 /// # Arguments
 ///
@@ -132,81 +138,90 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
 ///
 /// # Errors
 ///
-/// Returns `Error::RemoteError` if x or y is empty or has wrong length.
+/// Returns `Error::RemoteError` if x or y is empty, has wrong length, or if encoding fails.
 ///
 /// # Note
 ///
 /// The point is encoded in uncompressed format: 04 || x || y
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
 pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<u8>> {
+    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
+    use spki::der::Encode;
+
     if x.is_empty() || y.is_empty() {
         return Err(Error::RemoteError(
             "jwks: ecdsa key missing x or y".to_string(),
         ));
     }
 
-    // Normalize coordinate lengths (should be 32 bytes for P-256, 48 for P-384)
+    // Expected coordinate lengths for each curve
     let expected_len = match curve {
         EcdsaCurve::P256 => 32,
         EcdsaCurve::P384 => 48,
     };
 
-    let mut x_norm = x.to_vec();
-    let mut y_norm = y.to_vec();
+    // Normalize coordinates (remove leading zeros, pad if needed)
+    let normalize = |mut bytes: Vec<u8>| -> Result<Vec<u8>> {
+        // Remove leading zeros
+        while bytes.len() > expected_len && bytes[0] == 0 {
+            bytes.remove(0);
+        }
+        // Pad with zeros if too short
+        while bytes.len() < expected_len {
+            bytes.insert(0, 0);
+        }
+        if bytes.len() != expected_len {
+            return Err(Error::RemoteError(format!(
+                "jwks: ecdsa coordinates have wrong length for curve {curve:?}"
+            )));
+        }
+        Ok(bytes)
+    };
 
-    // Remove leading zeros if present
-    while x_norm.len() > expected_len && x_norm[0] == 0 {
-        x_norm.remove(0);
-    }
-    while y_norm.len() > expected_len && y_norm[0] == 0 {
-        y_norm.remove(0);
-    }
+    let x_norm = normalize(x.to_vec())?;
+    let y_norm = normalize(y.to_vec())?;
 
-    // Pad with zeros if too short
-    while x_norm.len() < expected_len {
-        x_norm.insert(0, 0);
-    }
-    while y_norm.len() < expected_len {
-        y_norm.insert(0, 0);
-    }
-
-    if x_norm.len() != expected_len || y_norm.len() != expected_len {
-        return Err(Error::RemoteError(format!(
-            "jwks: ecdsa coordinates have wrong length for curve {curve:?}"
-        )));
-    }
-
-    // Uncompressed point: 04 || x || y
+    // Build uncompressed point: 04 || x || y
     let mut point = Vec::with_capacity(1 + x_norm.len() + y_norm.len());
     point.push(0x04); // Uncompressed point marker
     point.extend_from_slice(&x_norm);
     point.extend_from_slice(&y_norm);
 
-    // EC OID and curve OID
-    // EC OID: 1.2.840.10045.2.1
-    const EC_OID: &[u8] = &[0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01];
+    // EC public key OID: 1.2.840.10045.2.1
+    const EC_PUBLIC_KEY_OID: &str = "1.2.840.10045.2.1";
 
-    let curve_oid: &[u8] = match curve {
-        // P-256 OID: 1.2.840.10045.3.1.7
-        EcdsaCurve::P256 => &[0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07],
-        // P-384 OID: 1.3.132.0.34
-        EcdsaCurve::P384 => &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22],
+    // Curve OIDs
+    let curve_oid = match curve {
+        // P-256 (secp256r1): 1.2.840.10045.3.1.7
+        EcdsaCurve::P256 => "1.2.840.10045.3.1.7",
+        // P-384 (secp384r1): 1.3.132.0.34
+        EcdsaCurve::P384 => "1.3.132.0.34",
     };
 
-    // AlgorithmIdentifier: SEQUENCE { EC OID, curve OID }
-    let mut alg_id_children = Vec::with_capacity(EC_OID.len() + curve_oid.len());
-    alg_id_children.extend_from_slice(EC_OID);
-    alg_id_children.extend_from_slice(curve_oid);
-    let alg_id = der_sequence(&alg_id_children);
+    // Create AlgorithmIdentifier with EC OID and curve OID as parameter
+    let curve_oid_parsed = curve_oid.parse()
+        .map_err(|e| Error::RemoteError(format!("jwks: invalid curve OID: {e}")))?;
+    let curve_oid_der = spki::der::asn1::ObjectIdentifier::to_der(&curve_oid_parsed)
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to encode curve OID: {e}")))?;
 
-    // SubjectPublicKey: BIT STRING of point
-    let spk_bitstr = der_bit_string(&point);
+    let algorithm = AlgorithmIdentifierOwned {
+        oid: EC_PUBLIC_KEY_OID.parse()
+            .map_err(|e| Error::RemoteError(format!("jwks: invalid EC OID: {e}")))?,
+        parameters: Some(spki::der::Any::from_der(&curve_oid_der)
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to parse curve OID: {e}")))?),
+    };
 
-    // SubjectPublicKeyInfo: SEQUENCE { AlgorithmIdentifier, SubjectPublicKey }
-    let mut spki_children = Vec::with_capacity(alg_id.len() + spk_bitstr.len());
-    spki_children.extend_from_slice(&alg_id);
-    spki_children.extend_from_slice(&spk_bitstr);
-    Ok(der_sequence(&spki_children))
+    // Create SubjectPublicKeyInfo
+    let spki = SubjectPublicKeyInfoOwned {
+        algorithm,
+        subject_public_key: spki::der::asn1::BitStringRef::new(0, &point)
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
+            .into(),
+    };
+
+    // Encode to DER
+    spki.to_der()
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to encode SPKI: {e}")))
 }
 
 #[cfg(all(test, feature = "rsa", feature = "remote"))]

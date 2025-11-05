@@ -28,7 +28,7 @@ all-algorithms = ["rsa", "ecdsa"]
 
 # Remote fetching features
 # `remote` now implies HTTPS via rustls by default.
-remote = ["dep:rustls", "dep:webpki-roots", "dep:rustls-pki-types"]
+remote = ["dep:rustls", "dep:webpki-roots", "dep:rustls-pki-types", "dep:spki"]
 
 [dependencies]
 # Core - minimal JSON serialization
@@ -49,6 +49,9 @@ aws-lc-rs = { version = "1", optional = true }
 rustls = { version = "0.23", optional = true }
 webpki-roots = { version = "0.26", optional = true }
 rustls-pki-types = { version = "1.7", optional = true }
+
+# SPKI encoding for JWK conversion (only needed with remote feature)
+spki = { version = "0.7", optional = true, default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }

@@ -233,22 +233,13 @@ jobs:
         include:
           - group: RSA
             features: "rsa"
-            benches: "rsa_end_to_end rsa_signature_verification"
+            benches: "rsa_benchmarks"
           - group: HMAC
             features: ""
             benches: "hmac_algorithms"
           - group: ECDSA
             features: "ecdsa"
             benches: "ecdsa_algorithms"
-          - group: Claims
-            features: ""
-            benches: "claims_validation"
-          - group: Selection
-            features: ""
-            benches: "algorithm_selection"
-          - group: Token
-            features: ""
-            benches: "token_parsing"
           - group: JWKS
             features: "remote"
             benches: "jwks_caching"

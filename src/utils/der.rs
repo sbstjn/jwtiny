@@ -39,7 +39,7 @@ use crate::keys::EcdsaCurve;
 /// ```
 #[cfg(all(feature = "rsa", feature = "remote"))]
 pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
-    use spki::der::{Encode, Writer, asn1::UintRef};
+    use spki::der::{Encode, asn1::Uint};
     use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 
     if n.is_empty() || e.is_empty() {
@@ -52,68 +52,44 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
     const RSA_ENCRYPTION_OID: &str = "1.2.840.113549.1.1.1";
 
     // Build RSAPublicKey SEQUENCE { modulus INTEGER, publicExponent INTEGER }
-    // We need to encode this as a DER sequence manually since spki expects the full key
-    let n_uint = UintRef::new(n)
-        .map_err(|e| Error::RemoteError(format!("jwks: invalid RSA modulus: {e}")))?;
-    let e_uint = UintRef::new(e)
-        .map_err(|e| Error::RemoteError(format!("jwks: invalid RSA exponent: {e}")))?;
+    // Create owned UInts from the data
+    let n_uint =
+        Uint::new(n).map_err(|e| Error::RemoteError(format!("jwks: invalid RSA modulus: {e}")))?;
+    let e_uint =
+        Uint::new(e).map_err(|e| Error::RemoteError(format!("jwks: invalid RSA exponent: {e}")))?;
 
-    // Encode the RSAPublicKey as a SEQUENCE
-    let rsa_public_key = {
-        use spki::der::SliceWriter;
+    // Encode modulus and exponent as DER INTEGERs
+    let n_der = n_uint
+        .to_der()
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to encode modulus: {e}")))?;
+    let e_der = e_uint
+        .to_der()
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to encode exponent: {e}")))?;
 
-        // Calculate size needed
-        let n_der = n_uint
-            .to_der()
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to encode modulus: {e}")))?;
-        let e_der = e_uint
-            .to_der()
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to encode exponent: {e}")))?;
+    // Manually build SEQUENCE: 0x30 <length> <n_der> <e_der>
+    let content_len = n_der.len() + e_der.len();
+    let mut rsa_public_key = Vec::with_capacity(content_len + 10);
 
-        // Build SEQUENCE containing both INTEGERs
-        let total_len = n_der.len() + e_der.len() + 10; // +10 for SEQUENCE header overhead
-        let mut buf = vec![0u8; total_len];
-        let mut writer = SliceWriter::new(&mut buf);
+    // SEQUENCE tag
+    rsa_public_key.push(0x30);
 
-        // SEQUENCE tag
-        writer
-            .write(&[0x30])
-            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+    // Encode length
+    if content_len < 128 {
+        rsa_public_key.push(content_len as u8);
+    } else if content_len <= 0xFF {
+        rsa_public_key.push(0x81);
+        rsa_public_key.push(content_len as u8);
+    } else if content_len <= 0xFFFF {
+        rsa_public_key.push(0x82);
+        rsa_public_key.push((content_len >> 8) as u8);
+        rsa_public_key.push((content_len & 0xFF) as u8);
+    } else {
+        return Err(Error::RemoteError("jwks: RSA key too large".to_string()));
+    }
 
-        // Length
-        let content_len = n_der.len() + e_der.len();
-        if content_len < 0x80 {
-            writer
-                .write(&[content_len as u8])
-                .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
-        } else {
-            let len_bytes = if content_len <= 0xFF {
-                vec![0x81, content_len as u8]
-            } else if content_len <= 0xFFFF {
-                vec![0x82, (content_len >> 8) as u8, (content_len & 0xFF) as u8]
-            } else {
-                return Err(Error::RemoteError("jwks: RSA key too large".to_string()));
-            };
-            writer
-                .write(&len_bytes)
-                .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
-        }
-
-        // Content
-        writer
-            .write(&n_der)
-            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
-        writer
-            .write(&e_der)
-            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
-
-        let written_len = writer
-            .finish()
-            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?
-            .len();
-        buf.truncate(written_len);
-        buf
-    };
+    // Append content
+    rsa_public_key.extend_from_slice(&n_der);
+    rsa_public_key.extend_from_slice(&e_der);
 
     // Create AlgorithmIdentifier with RSA OID and NULL parameters
     let algorithm = AlgorithmIdentifierOwned {

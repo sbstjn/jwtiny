@@ -27,10 +27,7 @@ async fn end_to_end_verify_rs256_from_jwkserve() {
     }
 
     impl HttpClient for ReqwestHttpClient {
-        fn fetch(
-            &self,
-            url: &str,
-        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
             let client = self.client.clone();
             let url = url.to_string();
             Box::pin(async move {

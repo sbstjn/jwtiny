@@ -3,14 +3,14 @@
 //! This module uses the `spki` crate from RustCrypto for safe, standards-compliant
 //! SPKI encoding instead of hand-rolling DER encoding.
 
-#[cfg(all(feature = "rsa", feature = "remote"))]
+#[cfg(any(
+    all(feature = "rsa", feature = "remote"),
+    all(feature = "ecdsa", feature = "remote")
+))]
 use crate::error::{Error, Result};
 
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
-use crate::{
-    error::{Error, Result},
-    keys::EcdsaCurve,
-};
+use crate::keys::EcdsaCurve;
 
 /// Build SubjectPublicKeyInfo DER for RSA from modulus (n) and exponent (e) bytes
 ///
@@ -39,8 +39,8 @@ use crate::{
 /// ```
 #[cfg(all(feature = "rsa", feature = "remote"))]
 pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
-    use spki::der::{Encode, asn1::UintRef};
-    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
+    use spki::der::{Encode, SliceWriter, Writer, asn1::UintRef};
+    use spki::{AlgorithmIdentifierOwned, ObjectIdentifier, SubjectPublicKeyInfoOwned};
 
     if n.is_empty() || e.is_empty() {
         return Err(Error::RemoteError(
@@ -123,11 +123,14 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
     };
 
     // Create SubjectPublicKeyInfo
+    let subject_public_key = spki::der::asn1::BitStringRef::new(0, &rsa_public_key)
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?;
+
     let spki = SubjectPublicKeyInfoOwned {
         algorithm,
-        subject_public_key: spki::der::asn1::BitStringRef::new(0, &rsa_public_key)
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
-            .into(),
+        subject_public_key: subject_public_key
+            .to_owned()
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to convert bit string: {e}")))?,
     };
 
     // Encode to DER
@@ -157,7 +160,7 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
 /// The point is encoded in uncompressed format: 04 || x || y
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
 pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<u8>> {
-    use spki::der::Encode;
+    use spki::der::{Decode, Encode, asn1::ObjectIdentifier};
     use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 
     if x.is_empty() || y.is_empty() {
@@ -228,11 +231,14 @@ pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<
     };
 
     // Create SubjectPublicKeyInfo
+    let subject_public_key = spki::der::asn1::BitStringRef::new(0, &point)
+        .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?;
+
     let spki = SubjectPublicKeyInfoOwned {
         algorithm,
-        subject_public_key: spki::der::asn1::BitStringRef::new(0, &point)
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to create bit string: {e}")))?
-            .into(),
+        subject_public_key: subject_public_key
+            .to_owned()
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to convert bit string: {e}")))?,
     };
 
     // Encode to DER

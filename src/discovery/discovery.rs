@@ -61,7 +61,7 @@ fn well_known_url_for_issuer(issuer: &str) -> Result<String> {
 /// let jwks_uri = discover_jwks_uri("https://auth.example.com", &client).await?;
 /// ```
 #[cfg(feature = "remote")]
-pub async fn discover_jwks_uri(issuer: &str, client: &impl HttpClient) -> Result<String> {
+pub async fn discover_jwks_uri(issuer: &str, client: &dyn HttpClient) -> Result<String> {
     let url = well_known_url_for_issuer(issuer)?;
     let bytes = client.fetch(&url).await?;
 
@@ -104,7 +104,7 @@ fn discovery_cache() -> &'static Mutex<HashMap<String, (Instant, String)>> {
 ///
 /// Same as `discover_jwks_uri()`
 #[cfg(feature = "remote")]
-pub async fn discover_jwks_uri_cached(issuer: &str, client: &impl HttpClient) -> Result<String> {
+pub async fn discover_jwks_uri_cached(issuer: &str, client: &dyn HttpClient) -> Result<String> {
     // Check cache first (per-issuer)
     if let Some(entry) = discovery_cache().lock().ok().and_then(|mut map| {
         if let Some((ts, val)) = map.get(issuer).cloned() {

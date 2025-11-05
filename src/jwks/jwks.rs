@@ -48,7 +48,7 @@ pub struct JwkSet {
 /// let jwk_set = fetch_jwks(&client, "https://auth.example.com/.well-known/jwks.json").await?;
 /// ```
 #[cfg(feature = "remote")]
-pub async fn fetch_jwks(client: &impl HttpClient, jwks_uri: &str) -> Result<JwkSet> {
+pub async fn fetch_jwks(client: &dyn HttpClient, jwks_uri: &str) -> Result<JwkSet> {
     if jwks_uri.trim().is_empty() {
         return Err(Error::RemoteError("jwks: empty jwks_uri".to_string()));
     }
@@ -88,7 +88,7 @@ fn jwks_cache() -> &'static Mutex<HashMap<String, (Instant, JwkSet)>> {
 ///
 /// Same as `fetch_jwks()`
 #[cfg(feature = "remote")]
-pub async fn fetch_jwks_cached(client: &impl HttpClient, jwks_uri: &str) -> Result<JwkSet> {
+pub async fn fetch_jwks_cached(client: &dyn HttpClient, jwks_uri: &str) -> Result<JwkSet> {
     // Check cache first (per-URI)
     if let Some(entry) = jwks_cache().lock().ok().and_then(|mut map| {
         if let Some((ts, val)) = map.get(jwks_uri).cloned() {

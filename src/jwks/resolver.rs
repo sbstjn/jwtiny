@@ -52,7 +52,7 @@ use crate::remote::http::HttpClient;
 /// ```
 #[cfg(feature = "remote")]
 pub async fn resolve_key_from_issuer(
-    client: &impl HttpClient,
+    client: &dyn HttpClient,
     issuer: &str,
     algorithm: &AlgorithmId,
     kid: Option<&str>,

@@ -4,7 +4,7 @@
 //! using `reqwest` for testing. It's only available in tests.
 
 #[cfg(feature = "remote")]
-use crate::error::Error;
+use crate::error::{Error, Result};
 #[cfg(feature = "remote")]
 use crate::remote::http::HttpClient;
 #[cfg(feature = "remote")]
@@ -33,10 +33,7 @@ impl ReqwestClient {
 
 #[cfg(all(feature = "remote", test))]
 impl HttpClient for ReqwestClient {
-    fn fetch(
-        &self,
-        url: &str,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+    fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
         let client = self.client.clone();
         let url = url.to_string();
         Box::pin(async move {

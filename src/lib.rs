@@ -384,7 +384,7 @@ mod integration_tests {
             fn fetch(
                 &self,
                 url: &str,
-            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
                 let url = url.to_string();
                 let dr = self.discovery_response.clone();
                 let jr = self.jwks_response.clone();

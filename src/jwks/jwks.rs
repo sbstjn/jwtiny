@@ -117,16 +117,15 @@ pub async fn fetch_jwks_cached(client: &dyn HttpClient, jwks_uri: &str) -> Resul
 #[cfg(all(test, feature = "remote"))]
 mod tests {
     use super::*;
+    use std::future::Future;
+    use std::pin::Pin;
 
     struct MockHttpClient {
         response: &'static str,
     }
 
     impl HttpClient for MockHttpClient {
-        fn fetch(
-            &self,
-            _url: &str,
-        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
             let response = self.response.as_bytes().to_vec();
             Box::pin(async move { Ok(response) })
         }
@@ -186,7 +185,7 @@ mod tests {
             fn fetch(
                 &self,
                 _url: &str,
-            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
                 let count = self.count.clone();
                 Box::pin(async move {
                     count.fetch_add(1, Ordering::SeqCst);

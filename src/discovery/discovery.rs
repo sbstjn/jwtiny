@@ -133,6 +133,8 @@ pub async fn discover_jwks_uri_cached(issuer: &str, client: &dyn HttpClient) -> 
 #[cfg(all(test, feature = "remote"))]
 mod tests {
     use super::*;
+    use std::future::Future;
+    use std::pin::Pin;
 
     #[tokio::test]
     async fn test_well_known_url_for_issuer() {
@@ -152,10 +154,7 @@ mod tests {
     }
 
     impl HttpClient for MockHttpClient {
-        fn fetch(
-            &self,
-            url: &str,
-        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
             assert!(url.contains("/.well-known/openid-configuration"));
             let response = self.response.as_bytes().to_vec();
             Box::pin(async move { Ok(response) })
@@ -177,10 +176,7 @@ mod tests {
     struct EmptyJwksUriMockClient;
 
     impl HttpClient for EmptyJwksUriMockClient {
-        fn fetch(
-            &self,
-            _url: &str,
-        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
             let body = r#"{ "jwks_uri": "" }"#;
             Box::pin(async move { Ok(body.as_bytes().to_vec()) })
         }
@@ -209,7 +205,7 @@ mod tests {
             fn fetch(
                 &self,
                 _url: &str,
-            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
                 let count = self.count.clone();
                 Box::pin(async move {
                     count.fetch_add(1, Ordering::SeqCst);
@@ -242,10 +238,7 @@ mod tests {
     struct InvalidJsonMockClient;
 
     impl HttpClient for InvalidJsonMockClient {
-        fn fetch(
-            &self,
-            _url: &str,
-        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>>> + Send + '_>> {
             Box::pin(async move { Ok(b"{ invalid json }".to_vec()) })
         }
     }

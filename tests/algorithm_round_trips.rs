@@ -190,12 +190,20 @@ mod rsa_tests {
 
     #[test]
     fn round_trip_rs256() {
-        test_rsa_round_trip_hs256();
+        test_rsa_round_trip("RS256");
     }
 
+    #[test]
+    fn round_trip_rs384() {
+        test_rsa_round_trip("RS384");
+    }
 
-    fn test_rsa_round_trip_hs256() {
-        let alg = "RS256";
+    #[test]
+    fn round_trip_rs512() {
+        test_rsa_round_trip("RS512");
+    }
+
+    fn test_rsa_round_trip(alg: &str) {
         use rand::thread_rng;
         use rsa::traits::PublicKeyParts;
 
@@ -233,17 +241,24 @@ mod rsa_tests {
             #[cfg(feature = "aws-lc-rs")]
             {
                 use aws_lc_rs::rand::SystemRandom;
-                use aws_lc_rs::signature::{KeyPair, RSA_PKCS1_SHA256, RsaKeyPair};
+                use aws_lc_rs::signature::{KeyPair, RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair};
 
                 let ring_keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes())
                     .expect("failed to create aws-lc-rs RsaKeyPair");
                 let public_key_der = ring_keypair.public_key().as_ref().to_vec();
 
+                let signature_algorithm = match alg {
+                    "RS256" => &RSA_PKCS1_SHA256,
+                    "RS384" => &RSA_PKCS1_SHA384,
+                    "RS512" => &RSA_PKCS1_SHA512,
+                    _ => panic!("unsupported algorithm: {}", alg),
+                };
+
                 let rng = SystemRandom::new();
                 let mut signature_bytes = vec![0u8; modulus_len];
                 ring_keypair
                     .sign(
-                        &RSA_PKCS1_SHA256,
+                        signature_algorithm,
                         &rng,
                         signing_input.as_bytes(),
                         &mut signature_bytes,
@@ -255,17 +270,24 @@ mod rsa_tests {
             #[cfg(not(feature = "aws-lc-rs"))]
             {
                 use ring::rand::SystemRandom;
-                use ring::signature::{RSA_PKCS1_SHA256, RsaKeyPair};
+                use ring::signature::{RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair};
 
                 let ring_keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes())
                     .expect("failed to create ring RsaKeyPair");
                 let public_key_der = ring_keypair.public().as_ref().to_vec();
 
+                let signature_algorithm = match alg {
+                    "RS256" => &RSA_PKCS1_SHA256,
+                    "RS384" => &RSA_PKCS1_SHA384,
+                    "RS512" => &RSA_PKCS1_SHA512,
+                    _ => panic!("unsupported algorithm: {}", alg),
+                };
+
                 let rng = SystemRandom::new();
                 let mut signature_bytes = vec![0u8; ring_keypair.public().modulus_len()];
                 ring_keypair
                     .sign(
-                        &RSA_PKCS1_SHA256,
+                        signature_algorithm,
                         &rng,
                         signing_input.as_bytes(),
                         &mut signature_bytes,
@@ -281,6 +303,14 @@ mod rsa_tests {
         // Parse and verify
         let parsed = ParsedToken::from_string(&token_str).expect("parse failed");
 
+        // Select appropriate algorithm policy
+        let algorithm_policy = match alg {
+            "RS256" => AlgorithmPolicy::rs256_only(),
+            "RS384" => AlgorithmPolicy::rs384_only(),
+            "RS512" => AlgorithmPolicy::rs512_only(),
+            _ => panic!("unsupported algorithm: {}", alg),
+        };
+
         let token = TokenValidator::new(parsed)
             .ensure_issuer(|iss| {
                 if iss == "https://example.com" {
@@ -291,7 +321,7 @@ mod rsa_tests {
             })
             .verify_signature(SignatureVerification::with_key(
                 Key::rsa_public(public_key_der),
-                AlgorithmPolicy::rs256_only(),
+                algorithm_policy,
             ))
             .validate_token(ValidationConfig::default())
             .run()
@@ -312,8 +342,143 @@ mod rsa_tests {
 mod ecdsa_tests {
     use super::*;
 
-    // Note: ECDSA round-trip tests require proper key generation infrastructure.
-    // These will be implemented when ECDSA test utilities are available.
+    #[test]
+    fn round_trip_es256() {
+        test_ecdsa_round_trip("ES256", jwtiny::EcdsaCurve::P256);
+    }
+
+    #[test]
+    fn round_trip_es384() {
+        test_ecdsa_round_trip("ES384", jwtiny::EcdsaCurve::P384);
+    }
+
+    fn test_ecdsa_round_trip(alg: &str, curve: jwtiny::EcdsaCurve) {
+        // Create token
+        let header = format!(r#"{{"alg":"{}","typ":"JWT"}}"#, alg);
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        let payload = format!(
+            r#"{{"iss":"https://example.com","sub":"test-user","exp":{},"iat":{}}}"#,
+            now + 3600,
+            now
+        );
+
+        let header_b64 = jwtiny::utils::base64url::encode(&header);
+        let payload_b64 = jwtiny::utils::base64url::encode(&payload);
+        let signing_input = format!("{}.{}", header_b64, payload_b64);
+
+        // Sign with appropriate backend
+        let (signature_b64, public_key_der) = {
+            #[cfg(feature = "aws-lc-rs")]
+            {
+                use aws_lc_rs::rand::SystemRandom;
+                use aws_lc_rs::signature::{
+                    EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING,
+                    ECDSA_P384_SHA384_FIXED_SIGNING, KeyPair,
+                };
+
+                // Select algorithm based on curve
+                let (signing_alg, pkcs8_template) = match curve {
+                    jwtiny::EcdsaCurve::P256 => (
+                        &ECDSA_P256_SHA256_FIXED_SIGNING,
+                        aws_lc_rs::signature::ECDSA_P256_SHA256_FIXED_SIGNING,
+                    ),
+                    jwtiny::EcdsaCurve::P384 => (
+                        &ECDSA_P384_SHA384_FIXED_SIGNING,
+                        aws_lc_rs::signature::ECDSA_P384_SHA384_FIXED_SIGNING,
+                    ),
+                };
+
+                // Generate key pair
+                let rng = SystemRandom::new();
+                let pkcs8_bytes = EcdsaKeyPair::generate_pkcs8(signing_alg, &rng)
+                    .expect("failed to generate ECDSA key");
+
+                let key_pair = EcdsaKeyPair::from_pkcs8(signing_alg, pkcs8_bytes.as_ref(), &rng)
+                    .expect("failed to create EcdsaKeyPair");
+
+                let public_key_der = key_pair.public_key().as_ref().to_vec();
+
+                // Sign
+                let signature_bytes = key_pair
+                    .sign(&rng, signing_input.as_bytes())
+                    .expect("failed to sign");
+                let signature_b64 =
+                    jwtiny::utils::base64url::encode_bytes(signature_bytes.as_ref());
+
+                (signature_b64, public_key_der)
+            }
+            #[cfg(not(feature = "aws-lc-rs"))]
+            {
+                use ring::rand::SystemRandom;
+                use ring::signature::{
+                    EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING,
+                    ECDSA_P384_SHA384_FIXED_SIGNING, KeyPair,
+                };
+
+                // Select algorithm based on curve
+                let signing_alg = match curve {
+                    jwtiny::EcdsaCurve::P256 => &ECDSA_P256_SHA256_FIXED_SIGNING,
+                    jwtiny::EcdsaCurve::P384 => &ECDSA_P384_SHA384_FIXED_SIGNING,
+                };
+
+                // Generate key pair
+                let rng = SystemRandom::new();
+                let pkcs8_bytes = EcdsaKeyPair::generate_pkcs8(signing_alg, &rng)
+                    .expect("failed to generate ECDSA key");
+
+                let key_pair = EcdsaKeyPair::from_pkcs8(signing_alg, pkcs8_bytes.as_ref(), &rng)
+                    .expect("failed to create EcdsaKeyPair");
+
+                let public_key_der = key_pair.public_key().as_ref().to_vec();
+
+                // Sign
+                let signature_bytes = key_pair
+                    .sign(&rng, signing_input.as_bytes())
+                    .expect("failed to sign");
+                let signature_b64 =
+                    jwtiny::utils::base64url::encode_bytes(signature_bytes.as_ref());
+
+                (signature_b64, public_key_der)
+            }
+        };
+
+        let token_str = format!("{}.{}", signing_input, signature_b64);
+
+        // Parse and verify
+        let parsed = ParsedToken::from_string(&token_str).expect("parse failed");
+
+        // Select appropriate algorithm policy
+        let algorithm_policy = match alg {
+            "ES256" => AlgorithmPolicy::es256_only(),
+            "ES384" => AlgorithmPolicy::ecdsa_any(),  // Use ecdsa_any for ES384 as there's no es384_only
+            _ => panic!("unsupported algorithm: {}", alg),
+        };
+
+        let token = TokenValidator::new(parsed)
+            .ensure_issuer(|iss| {
+                if iss == "https://example.com" {
+                    Ok(())
+                } else {
+                    Err(Error::IssuerNotTrusted(iss.to_string()))
+                }
+            })
+            .verify_signature(SignatureVerification::with_key(
+                Key::ecdsa_public(public_key_der, curve),
+                algorithm_policy,
+            ))
+            .validate_token(ValidationConfig::default())
+            .run()
+            .expect("verification failed");
+
+        // Verify claims
+        assert_eq!(token.issuer(), Some("https://example.com"));
+        assert_eq!(token.subject(), Some("test-user"));
+        assert_eq!(token.header().algorithm_str(), alg);
+    }
 }
 
 // ============================================================================

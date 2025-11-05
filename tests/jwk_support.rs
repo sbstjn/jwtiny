@@ -93,6 +93,66 @@ mod rsa_jwk_tests {
         // 4. Pass DER bytes to Key::rsa_public()
     }
 
+    /// Test JWK n/e components to SPKI DER conversion and verification
+    ///
+    /// This is a critical integration test that verifies:
+    /// 1. Our spki-based DER encoding (from src/utils/der.rs) works correctly
+    /// 2. The DER output is compatible with ring/aws-lc-rs signature verification
+    /// 3. The full flow: JWK components → SPKI DER → signature verification
+    #[test]
+    #[cfg(feature = "remote")]
+    fn test_jwk_components_to_spki_to_verification() {
+        use rsa::RsaPrivateKey;
+        use rsa::pkcs8::EncodePrivateKey;
+        use rsa::traits::PublicKeyParts;
+
+        // Generate RSA key pair
+        let mut rng = rand::thread_rng();
+        let private_key = RsaPrivateKey::new(&mut rng, 2048).expect("failed to generate key");
+        let public_key = private_key.to_public_key();
+
+        // Extract RSA components (simulating JWK n/e values)
+        let n = public_key.n().to_bytes_be();
+        let e = public_key.e().to_bytes_be();
+
+        // **CRITICAL TEST:** Convert JWK components to SPKI DER using our spki crate implementation
+        let spki_der = jwtiny::utils::der::rsa_spki_from_n_e(&n, &e)
+            .expect("failed to convert JWK components to SPKI DER");
+
+        // Verify the DER is valid (should start with SEQUENCE tag)
+        assert_eq!(spki_der[0], 0x30, "SPKI should start with SEQUENCE tag");
+        assert!(!spki_der.is_empty(), "SPKI DER should not be empty");
+
+        // Create and sign a token using the private key
+        let token_str = create_rs256_token(&private_key);
+
+        // **CRITICAL TEST:** Verify the token using the SPKI DER we generated from JWK components
+        // This proves that our spki crate integration produces DER compatible with ring/aws-lc-rs
+        let parsed = ParsedToken::from_string(&token_str).expect("parse failed");
+
+        let result = TokenValidator::new(parsed)
+            .danger_skip_issuer_validation()
+            .verify_signature(SignatureVerification::with_key(
+                Key::rsa_public(spki_der),  // Using our JWK→SPKI conversion result!
+                AlgorithmPolicy::rs256_only(),
+            ))
+            .validate_token(ValidationConfig::default())
+            .run();
+
+        match &result {
+            Ok(_) => {
+                // Success! This proves:
+                // 1. Our spki-based DER encoding is correct
+                // 2. The output is compatible with ring/aws-lc-rs
+                // 3. JWK n/e → SPKI → verification works end-to-end
+            }
+            Err(e) => panic!(
+                "JWK→SPKI→verification failed! Our spki crate integration is broken: {:?}",
+                e
+            ),
+        }
+    }
+
     /// Test JWK metadata handling (kid, alg, use fields)
     #[test]
     fn test_jwk_metadata() {

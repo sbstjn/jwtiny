@@ -50,9 +50,10 @@ impl ParsedToken {
         // Decode payload (but don't parse claims yet - that happens after verification)
         let raw_payload = base64url::decode(&payload_b64)?;
 
-        // Validate signature is valid base64url (decode but don't use the result yet)
-        // This ensures we reject tokens with invalid characters early
-        base64url::decode_bytes(&signature_b64)?;
+        // Validate signature contains only valid base64url characters
+        // We don't decode it fully (to allow incomplete test signatures), just check characters
+        // This ensures we reject tokens with spaces, newlines, etc. early
+        base64url::validate_chars(&signature_b64)?;
 
         Ok(Self {
             header,

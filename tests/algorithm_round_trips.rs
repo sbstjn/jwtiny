@@ -241,7 +241,9 @@ mod rsa_tests {
             #[cfg(feature = "aws-lc-rs")]
             {
                 use aws_lc_rs::rand::SystemRandom;
-                use aws_lc_rs::signature::{KeyPair, RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair};
+                use aws_lc_rs::signature::{
+                    KeyPair, RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair,
+                };
 
                 let ring_keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes())
                     .expect("failed to create aws-lc-rs RsaKeyPair");
@@ -270,7 +272,9 @@ mod rsa_tests {
             #[cfg(not(feature = "aws-lc-rs"))]
             {
                 use ring::rand::SystemRandom;
-                use ring::signature::{RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair};
+                use ring::signature::{
+                    RSA_PKCS1_SHA256, RSA_PKCS1_SHA384, RSA_PKCS1_SHA512, RsaKeyPair,
+                };
 
                 let ring_keypair = RsaKeyPair::from_pkcs8(pkcs8_doc.as_bytes())
                     .expect("failed to create ring RsaKeyPair");
@@ -376,8 +380,8 @@ mod ecdsa_tests {
             {
                 use aws_lc_rs::rand::SystemRandom;
                 use aws_lc_rs::signature::{
-                    EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING,
-                    ECDSA_P384_SHA384_FIXED_SIGNING, KeyPair,
+                    ECDSA_P256_SHA256_FIXED_SIGNING, ECDSA_P384_SHA384_FIXED_SIGNING, EcdsaKeyPair,
+                    KeyPair,
                 };
 
                 // Select algorithm based on curve
@@ -415,8 +419,8 @@ mod ecdsa_tests {
             {
                 use ring::rand::SystemRandom;
                 use ring::signature::{
-                    EcdsaKeyPair, ECDSA_P256_SHA256_FIXED_SIGNING,
-                    ECDSA_P384_SHA384_FIXED_SIGNING, KeyPair,
+                    ECDSA_P256_SHA256_FIXED_SIGNING, ECDSA_P384_SHA384_FIXED_SIGNING, EcdsaKeyPair,
+                    KeyPair,
                 };
 
                 // Select algorithm based on curve
@@ -454,7 +458,7 @@ mod ecdsa_tests {
         // Select appropriate algorithm policy
         let algorithm_policy = match alg {
             "ES256" => AlgorithmPolicy::es256_only(),
-            "ES384" => AlgorithmPolicy::ecdsa_any(),  // Use ecdsa_any for ES384 as there's no es384_only
+            "ES384" => AlgorithmPolicy::ecdsa_any(), // Use ecdsa_any for ES384 as there's no es384_only
             _ => panic!("unsupported algorithm: {}", alg),
         };
 

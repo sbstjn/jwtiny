@@ -139,5 +139,9 @@ fn bench_rsa_end_to_end(_c: &mut Criterion) {
     // No-op when RSA feature is disabled
 }
 
-criterion_group!(benches, bench_rsa_signature_verification, bench_rsa_end_to_end);
+criterion_group!(
+    benches,
+    bench_rsa_signature_verification,
+    bench_rsa_end_to_end
+);
 criterion_main!(benches);

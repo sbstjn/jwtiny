@@ -152,7 +152,10 @@ mod tests {
     }
 
     impl HttpClient for MockHttpClient {
-        fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(
+            &self,
+            url: &str,
+        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
             assert!(url.contains("/.well-known/openid-configuration"));
             let response = self.response.as_bytes().to_vec();
             Box::pin(async move { Ok(response) })
@@ -174,7 +177,10 @@ mod tests {
     struct EmptyJwksUriMockClient;
 
     impl HttpClient for EmptyJwksUriMockClient {
-        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(
+            &self,
+            _url: &str,
+        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
             let body = r#"{ "jwks_uri": "" }"#;
             Box::pin(async move { Ok(body.as_bytes().to_vec()) })
         }
@@ -192,15 +198,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_discover_jwks_uri_cached() {
-        use std::sync::atomic::{AtomicU32, Ordering};
         use std::sync::Arc;
+        use std::sync::atomic::{AtomicU32, Ordering};
 
         struct CountingHttpClient {
             count: Arc<AtomicU32>,
         }
 
         impl HttpClient for CountingHttpClient {
-            fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            fn fetch(
+                &self,
+                _url: &str,
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
                 let count = self.count.clone();
                 Box::pin(async move {
                     count.fetch_add(1, Ordering::SeqCst);
@@ -233,7 +242,10 @@ mod tests {
     struct InvalidJsonMockClient;
 
     impl HttpClient for InvalidJsonMockClient {
-        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(
+            &self,
+            _url: &str,
+        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
             Box::pin(async move { Ok(b"{ invalid json }".to_vec()) })
         }
     }

@@ -106,7 +106,10 @@ fn test_whitespace_handling() {
     // Trailing whitespace becomes part of the signature component
     let with_trailing = format!("{} ", token);
     // Space character is invalid Base64URL, signature decode should fail
-    assert!(ParsedToken::from_string(&with_trailing).is_err(),"Trailing whitespace should cause base64 decode failure");
+    assert!(
+        ParsedToken::from_string(&with_trailing).is_err(),
+        "Trailing whitespace should cause base64 decode failure"
+    );
 }
 
 #[test]
@@ -116,8 +119,10 @@ fn test_newlines_in_token() {
     // Newline at end becomes part of signature component
     let with_newline = format!("{}\n", token);
     // Newline is invalid Base64URL, should fail
-    assert!(ParsedToken::from_string(&with_newline).is_err(),
-        "Newline in token should cause base64 decode failure");
+    assert!(
+        ParsedToken::from_string(&with_newline).is_err(),
+        "Newline in token should cause base64 decode failure"
+    );
 
     // Newline in middle (between parts) - more realistic
     let parts: Vec<&str> = token.split('.').collect();
@@ -728,7 +733,10 @@ fn test_header_with_null_values() {
     // miniserde handles null as None for Option<String> fields
     let result = ParsedToken::from_string(&token);
     // Should parse successfully - null is valid JSON and maps to None
-    assert!(result.is_ok(), "null in JSON should deserialize to None for Option fields");
+    assert!(
+        result.is_ok(),
+        "null in JSON should deserialize to None for Option fields"
+    );
     let parsed = result.unwrap();
     assert_eq!(parsed.header().token_type, None);
 }

@@ -7,7 +7,10 @@
 use crate::error::{Error, Result};
 
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
-use crate::{error::{Error, Result}, keys::EcdsaCurve};
+use crate::{
+    error::{Error, Result},
+    keys::EcdsaCurve,
+};
 
 /// Build SubjectPublicKeyInfo DER for RSA from modulus (n) and exponent (e) bytes
 ///
@@ -36,8 +39,8 @@ use crate::{error::{Error, Result}, keys::EcdsaCurve};
 /// ```
 #[cfg(all(feature = "rsa", feature = "remote"))]
 pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
-    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
     use spki::der::{Encode, asn1::UintRef};
+    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 
     if n.is_empty() || e.is_empty() {
         return Err(Error::RemoteError(
@@ -60,10 +63,12 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
         use spki::der::SliceWriter;
 
         // Calculate size needed
-        let n_der = n_uint.to_der().map_err(|e|
-            Error::RemoteError(format!("jwks: failed to encode modulus: {e}")))?;
-        let e_der = e_uint.to_der().map_err(|e|
-            Error::RemoteError(format!("jwks: failed to encode exponent: {e}")))?;
+        let n_der = n_uint
+            .to_der()
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to encode modulus: {e}")))?;
+        let e_der = e_uint
+            .to_der()
+            .map_err(|e| Error::RemoteError(format!("jwks: failed to encode exponent: {e}")))?;
 
         // Build SEQUENCE containing both INTEGERs
         let total_len = n_der.len() + e_der.len() + 10; // +10 for SEQUENCE header overhead
@@ -71,14 +76,16 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
         let mut writer = SliceWriter::new(&mut buf);
 
         // SEQUENCE tag
-        writer.write(&[0x30]).map_err(|e|
-            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        writer
+            .write(&[0x30])
+            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
 
         // Length
         let content_len = n_der.len() + e_der.len();
         if content_len < 0x80 {
-            writer.write(&[content_len as u8]).map_err(|e|
-                Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+            writer
+                .write(&[content_len as u8])
+                .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
         } else {
             let len_bytes = if content_len <= 0xFF {
                 vec![0x81, content_len as u8]
@@ -87,25 +94,30 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
             } else {
                 return Err(Error::RemoteError("jwks: RSA key too large".to_string()));
             };
-            writer.write(&len_bytes).map_err(|e|
-                Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+            writer
+                .write(&len_bytes)
+                .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
         }
 
         // Content
-        writer.write(&n_der).map_err(|e|
-            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
-        writer.write(&e_der).map_err(|e|
-            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        writer
+            .write(&n_der)
+            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        writer
+            .write(&e_der)
+            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
 
-        let written = writer.finish().map_err(|e|
-            Error::RemoteError(format!("jwks: encoding error: {e}")))?;
+        let written = writer
+            .finish()
+            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
         buf.truncate(written.len());
         buf
     };
 
     // Create AlgorithmIdentifier with RSA OID and NULL parameters
     let algorithm = AlgorithmIdentifierOwned {
-        oid: RSA_ENCRYPTION_OID.parse()
+        oid: RSA_ENCRYPTION_OID
+            .parse()
             .map_err(|e| Error::RemoteError(format!("jwks: invalid OID: {e}")))?,
         parameters: Some(spki::der::asn1::AnyRef::from(spki::der::asn1::Null).into()),
     };
@@ -145,8 +157,8 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
 /// The point is encoded in uncompressed format: 04 || x || y
 #[cfg(all(feature = "ecdsa", feature = "remote"))]
 pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<u8>> {
-    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
     use spki::der::Encode;
+    use spki::{AlgorithmIdentifierOwned, SubjectPublicKeyInfoOwned};
 
     if x.is_empty() || y.is_empty() {
         return Err(Error::RemoteError(
@@ -199,16 +211,20 @@ pub fn ecdsa_spki_from_x_y(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<
     };
 
     // Create AlgorithmIdentifier with EC OID and curve OID as parameter
-    let curve_oid_parsed = curve_oid.parse()
+    let curve_oid_parsed = curve_oid
+        .parse()
         .map_err(|e| Error::RemoteError(format!("jwks: invalid curve OID: {e}")))?;
     let curve_oid_der = spki::der::asn1::ObjectIdentifier::to_der(&curve_oid_parsed)
         .map_err(|e| Error::RemoteError(format!("jwks: failed to encode curve OID: {e}")))?;
 
     let algorithm = AlgorithmIdentifierOwned {
-        oid: EC_PUBLIC_KEY_OID.parse()
+        oid: EC_PUBLIC_KEY_OID
+            .parse()
             .map_err(|e| Error::RemoteError(format!("jwks: invalid EC OID: {e}")))?,
-        parameters: Some(spki::der::Any::from_der(&curve_oid_der)
-            .map_err(|e| Error::RemoteError(format!("jwks: failed to parse curve OID: {e}")))?),
+        parameters: Some(
+            spki::der::Any::from_der(&curve_oid_der)
+                .map_err(|e| Error::RemoteError(format!("jwks: failed to parse curve OID: {e}")))?,
+        ),
     };
 
     // Create SubjectPublicKeyInfo

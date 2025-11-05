@@ -68,7 +68,11 @@ struct ReqwestHttpClient {
 
 #[cfg(feature = "remote")]
 impl HttpClient for ReqwestHttpClient {
-    fn fetch(&self, url: &str) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+    fn fetch(
+        &self,
+        url: &str,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Vec<u8>, Error>> + Send + '_>>
+    {
         let client = self.client.clone();
         let url = url.to_string();
         Box::pin(async move {

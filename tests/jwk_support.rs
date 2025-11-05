@@ -133,7 +133,7 @@ mod rsa_jwk_tests {
         let result = TokenValidator::new(parsed)
             .danger_skip_issuer_validation()
             .verify_signature(SignatureVerification::with_key(
-                Key::rsa_public(spki_der),  // Using our JWK→SPKI conversion result!
+                Key::rsa_public(spki_der), // Using our JWK→SPKI conversion result!
                 AlgorithmPolicy::rs256_only(),
             ))
             .validate_token(ValidationConfig::default())

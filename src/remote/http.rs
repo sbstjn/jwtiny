@@ -62,5 +62,6 @@ pub trait HttpClient: Send + Sync {
     /// # Errors
     ///
     /// Should return `Error::RemoteError` with format: "component: description"
-    fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>>;
+    fn fetch(&self, url: &str)
+    -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>>;
 }

@@ -33,7 +33,10 @@ impl ReqwestClient {
 
 #[cfg(all(feature = "remote", test))]
 impl HttpClient for ReqwestClient {
-    fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+    fn fetch(
+        &self,
+        url: &str,
+    ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
         let client = self.client.clone();
         let url = url.to_string();
         Box::pin(async move {

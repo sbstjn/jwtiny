@@ -123,7 +123,10 @@ mod tests {
     }
 
     impl HttpClient for MockHttpClient {
-        fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        fn fetch(
+            &self,
+            _url: &str,
+        ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
             let response = self.response.as_bytes().to_vec();
             Box::pin(async move { Ok(response) })
         }
@@ -172,15 +175,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_jwks_cached() {
-        use std::sync::atomic::{AtomicU32, Ordering};
         use std::sync::Arc;
+        use std::sync::atomic::{AtomicU32, Ordering};
 
         struct CountingHttpClient {
             count: Arc<AtomicU32>,
         }
 
         impl HttpClient for CountingHttpClient {
-            fn fetch(&self, _url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+            fn fetch(
+                &self,
+                _url: &str,
+            ) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
                 let count = self.count.clone();
                 Box::pin(async move {
                     count.fetch_add(1, Ordering::SeqCst);

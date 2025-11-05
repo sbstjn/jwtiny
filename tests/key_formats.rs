@@ -298,28 +298,8 @@ mod rsa_key_formats {
 mod ecdsa_key_formats {
     use super::*;
 
-    // Note: ECDSA key format testing requires proper key generation utilities
-    // These tests are placeholders and should be implemented with proper ECDSA support
-
-    #[test]
-    #[ignore = "requires ECDSA key generation utilities"]
-    fn test_ecdsa_pkcs8_der_public_key() {
-        // TODO: Implement ECDSA PKCS#8 DER key format test
-        // Similar to RSA tests but with ECDSA P-256/P-384 keys
-    }
-
-    #[test]
-    #[ignore = "requires ECDSA key generation utilities"]
-    fn test_ecdsa_sec1_der_public_key() {
-        // TODO: Implement ECDSA SEC1 DER key format test
-        // SEC1 is the ECDSA-specific format (similar to PKCS#1 for RSA)
-    }
-
-    #[test]
-    #[ignore = "requires ECDSA key generation utilities"]
-    fn test_ecdsa_pem_public_key() {
-        // TODO: Implement ECDSA PEM key format test
-    }
+    // Note: ECDSA key format tests require proper key generation infrastructure.
+    // These will be implemented when ECDSA test utilities are available.
 }
 
 // ============================================================================

@@ -74,10 +74,10 @@ fn test_missing_parts() {
         ParsedToken::from_string(".payload"),
         Err(Error::InvalidFormat)
     ));
-    // "header.payload." has 3 parts (last is empty string) - will parse but decode will fail
+    // "header.payload." has 3 parts (last is empty string) - should fail on Base64URL decode
     let result = ParsedToken::from_string("header.payload.");
-    // May succeed parsing but fail on Base64URL decode, or succeed if both decode to empty
-    let _result = result; // Just test it doesn't panic
+    // "header" and "payload" are invalid base64, so this should fail
+    assert!(result.is_err(), "Invalid base64 should fail to parse");
 }
 
 #[test]
@@ -103,35 +103,21 @@ fn test_whitespace_handling() {
     // But the space will be part of one component -> decode fails
     assert!(ParsedToken::from_string(&with_space_between).is_err());
 
-    // Trailing whitespace on token (after last dot)
-    // This will be in the signature part after split
-    // Empty string is valid Base64URL, but space character is not
-    // Actually, if there's trailing space after token, it becomes part of signature part
+    // Trailing whitespace becomes part of the signature component
     let with_trailing = format!("{} ", token);
-    // Split treats this as signature ending with space -> decode should fail
-    // But let's verify actual behavior
-    let result = ParsedToken::from_string(&with_trailing);
-    // Empty string in Base64URL decode returns Ok(Vec::new())
-    // But space character should fail
-    // Let's just verify it doesn't panic and document behavior
-    let _result = result;
+    // Space character is invalid Base64URL, signature decode should fail
+    assert!(ParsedToken::from_string(&with_trailing).is_err(),"Trailing whitespace should cause base64 decode failure");
 }
 
 #[test]
 fn test_newlines_in_token() {
     let token = create_valid_token();
 
-    // Newline at end - will be part of signature after split
-    // Base64URL decode should reject newline character
+    // Newline at end becomes part of signature component
     let with_newline = format!("{}\n", token);
-    let result1 = ParsedToken::from_string(&with_newline);
-    // If empty string is allowed, this might succeed (newline decoded as empty)
-    // But newline is not valid Base64URL character, should fail
-    // Actually, base64url::decode_bytes("") returns Ok(Vec::new())
-    // But newline character '\n' should fail
-    // Let's check: if split results in empty string for signature, it might pass
-    // Documenting actual behavior
-    let _result1 = result1;
+    // Newline is invalid Base64URL, should fail
+    assert!(ParsedToken::from_string(&with_newline).is_err(),
+        "Newline in token should cause base64 decode failure");
 
     // Newline in middle (between parts) - more realistic
     let parts: Vec<&str> = token.split('.').collect();
@@ -731,8 +717,7 @@ fn test_header_with_extra_fields() {
 
 #[test]
 fn test_header_with_null_values() {
-    // Header with null values (should be rejected as invalid JSON for our parser)
-    // JSON doesn't allow null for string values in our strict parser
+    // Header with null values - miniserde should deserialize null to None for Option fields
     let header = r#"{"alg":"HS256","typ":null}"#;
     let header_b64 = jwtiny::utils::base64url::encode(header);
     let payload_b64 = jwtiny::utils::base64url::encode(r#"{"iss":"test"}"#);
@@ -740,11 +725,12 @@ fn test_header_with_null_values() {
 
     let token = format!("{}.{}.{}", header_b64, payload_b64, sig);
 
-    // miniserde might handle null, but our TokenHeader expects Option<String>
-    // This depends on how miniserde deserializes null
+    // miniserde handles null as None for Option<String> fields
     let result = ParsedToken::from_string(&token);
-    // May succeed or fail depending on miniserde behavior
-    let _result = result;
+    // Should parse successfully - null is valid JSON and maps to None
+    assert!(result.is_ok(), "null in JSON should deserialize to None for Option fields");
+    let parsed = result.unwrap();
+    assert_eq!(parsed.header().token_type, None);
 }
 
 // ============================================================================

@@ -193,17 +193,6 @@ mod rsa_tests {
         test_rsa_round_trip_hs256();
     }
 
-    #[test]
-    #[ignore = "RSA test infrastructure needs sha2/rsa version alignment"]
-    fn round_trip_rs384() {
-        // TODO: Implement after resolving rsa crate version compatibility
-    }
-
-    #[test]
-    #[ignore = "RSA test infrastructure needs sha2/rsa version alignment"]
-    fn round_trip_rs512() {
-        // TODO: Implement after resolving rsa crate version compatibility
-    }
 
     fn test_rsa_round_trip_hs256() {
         let alg = "RS256";
@@ -323,22 +312,8 @@ mod rsa_tests {
 mod ecdsa_tests {
     use super::*;
 
-    // Note: ECDSA testing requires generating keys and signing tokens.
-    // For now, we'll add placeholder tests that will be implemented
-    // once we have proper ECDSA key generation utilities.
-
-    #[test]
-    #[ignore = "requires ECDSA key generation utilities"]
-    fn round_trip_es256() {
-        // TODO: Implement with proper ECDSA P-256 key generation
-        // Similar to RSA tests but with ECDSA signing
-    }
-
-    #[test]
-    #[ignore = "requires ECDSA key generation utilities"]
-    fn round_trip_es384() {
-        // TODO: Implement with proper ECDSA P-384 key generation
-    }
+    // Note: ECDSA round-trip tests require proper key generation infrastructure.
+    // These will be implemented when ECDSA test utilities are available.
 }
 
 // ============================================================================

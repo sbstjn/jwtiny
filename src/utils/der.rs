@@ -107,10 +107,11 @@ pub fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
             .write(&e_der)
             .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
 
-        let written = writer
+        let written_len = writer
             .finish()
-            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?;
-        buf.truncate(written.len());
+            .map_err(|e| Error::RemoteError(format!("jwks: encoding error: {e}")))?
+            .len();
+        buf.truncate(written_len);
         buf
     };
 

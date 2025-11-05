@@ -116,30 +116,42 @@ Requires the `remote` feature. Fetch public keys from a JWKS endpoint:
 ```rust
 use jwtiny::*;
 use jwtiny::remote::HttpClient;
+use std::future::Future;
+use std::pin::Pin;
 
-// Create an HTTP client function pointer
-let http_client: HttpClient = {
-    let client = reqwest::Client::new();
-    Box::new(move |url: String| {
-        let client = client.clone();
+// Implement the HttpClient trait
+#[derive(Clone)]
+struct MyHttpClient {
+    client: reqwest::Client,
+}
+
+impl HttpClient for MyHttpClient {
+    fn fetch(&self, url: &str) -> Pin<Box<dyn Future<Output = Result<Vec<u8>, Error>> + Send + '_>> {
+        let client = self.client.clone();
+        let url = url.to_string();
         Box::pin(async move {
             let response = client
                 .get(&url)
                 .send()
                 .await
                 .map_err(|e| Error::RemoteError(format!("network: {}", e)))?;
-            
+
             if !response.status().is_success() {
                 return Err(Error::RemoteError(
                     format!("http: status {}", response.status())
                 ));
             }
-            
+
             response.bytes().await
                 .map_err(|e| Error::RemoteError(format!("network: {}", e)))
                 .map(|b| b.to_vec())
         })
-    })
+    }
+}
+
+// Create the HTTP client
+let http_client = MyHttpClient {
+    client: reqwest::Client::new(),
 };
 
 // Validate with automatic key resolution from JWKS
@@ -154,7 +166,7 @@ let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
     })
     .verify_signature(
         SignatureVerification::with_jwks(
-            http_client,
+            http_client.clone(),  // Takes ownership; clone if needed
             AlgorithmPolicy::recommended_asymmetric(), // RS256 + ES256
             true  // use_cache
         )

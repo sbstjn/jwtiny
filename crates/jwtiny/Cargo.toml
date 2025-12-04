@@ -1,5 +1,6 @@
 [package]
 name = "jwtiny"
+readme = "../../README.md"
 
 authors.workspace = true
 categories.workspace = true

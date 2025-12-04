@@ -2,402 +2,180 @@
 
 [![crates.io](https://img.shields.io/crates/v/jwtiny.svg)](https://crates.io/crates/jwtiny)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE.md)
-[![CI](https://github.com/sbstjn/jwtiny/actions/workflows/release.yml/badge.svg)](https://github.com/sbstjn/jwtiny/actions/workflows/release.yml)
+[![CI](https://github.com/sbstjn/jwtiny/actions/workflows/release.yml/badge.svg)](https://github.com/sbstjn/jwtiny/actions/workflows/ci.yml)
 [![CI](https://github.com/sbstjn/jwtiny/actions/workflows/ci.yml/badge.svg)](https://github.com/sbstjn/jwtiny/actions/workflows/ci.yml)
 
-> Minimal, type-safe JSON Web Token (JWT) validation for Rust.
+> Minimal JSON Web Token (JWT) validation for Rust.
 
-**jwtiny** validates JWT tokens through a builder-pattern API that attempts to enforce correct validation order at compile time. Initially created to explore `miniserde` support for common JWT libraries, this ended up as a full library.
+**jwtiny** validates JWT tokens efficiently in production Rust applications. The validator follows a reusable pattern: configure it once at application startup, then verify tokens with minimal allocations. The validator can be shared across requests, which reduces memory footprint and improves performance.
 
-> **Warning:** This is a learning project to get more familiar with Rust. If you spot any flaws, let me know. If you can make any use of this, let me know as well! 🎉
+The library supports RSA algorithms (RS256, RS384, RS512) with an aws-lc-rs backend, and provides JWKS support for remote key fetching over HTTPS (rustls) with caching. It's been tested with [Axum](examples/axum/), [Poem](examples/poem/), [Rocket](examples/rocket/), and [Warp](examples/warp/).
 
-## Overview
-
-JWTs (JSON Web Tokens) encode claims as JSON objects secured by digital signatures or message authentication codes. Validating them requires parsing Base64URL-encoded segments, verifying signatures with cryptographic keys, and checking temporal claims like expiration.
-
-Common pitfalls include algorithm confusion attacks (accepting asymmetric algorithms when only symmetric keys are trusted), server-side request forgery (SSRF) via untrusted issuer URLs, and timing vulnerabilities in signature comparison.
-
-**jwtiny** attempts to address these through a type-safe state machine: parsing yields a `ParsedToken`, issuer validation produces a `TrustedToken`, signature verification creates a `VerifiedToken`, and claims validation returns the final `Token`. Each stage must complete before the next begins, enforced by Rust's type system. The builder pattern configures all steps upfront, then executes them atomically—aiming to prevent partial validation and ensure cryptographic keys are only used after issuer checks complete.
-
-## Features
-
-Per default, only `hmac` support is enabled. Everything else needs to be opt-in enabled as features:
-
-| Feature | Feature | Description |
-|---------|---------|-------------|
-| `hmac` | **always enabled** | HMAC algorithms (HS256, HS384, HS512)  |
-| `rsa` | ✅ | RSA algorithms (RS256, RS384, RS512) |
-| `ecdsa` | ✅ | ECDSA algorithms (ES256, ES384) |
-| `aws-lc-rs` | ✅ | Use `aws-lc-rs` backend instead of `ring` for RSA/ECDSA |
-| `all-algorithms` | ✅ | Enable all asymmetric algorithms (RSA + ECDSA) |
-| `remote` | ✅ | Remote JWKS over HTTPS (rustls). Provide an HTTP client. |
-
-## Quick Start
+## Installation
 
 Add **jwtiny** to your `Cargo.toml`:
 
-```toml
-[dependencies]
-jwtiny = "0.0.0"
+```bash
+cargo add jwtiny
 ```
 
-> **Note:** Current version is `0.0.0` (pre-release). Update to latest published version when available.
+## Quick Start
 
-For asymmetric algorithms (RSA, ECDSA), enable features:
+### Static Key Validation
 
-```toml
-jwtiny = { version = "0.0.0", features = ["rsa", "ecdsa"] }
-```
-
-Minimal example validating an HMAC-signed token:
+When you have a static public key, configure the validator like this:
 
 ```rust
-use jwtiny::*;
+use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator};
 
-let token = TokenValidator::new(
-    ParsedToken::from_string(token_str)?
-)
-    .ensure_issuer(|iss| Ok(iss == "https://trusted.com"))
-    .verify_signature(SignatureVerification::with_secret_hs256(b"secret"))
-    .validate_token(ValidationConfig::default())
-    .run()?;
+let validator = TokenValidator::new()
+    .algorithms(AlgorithmPolicy::rs512_only())
+    .validate(ClaimsValidation::default())
+    .key(&public_key_der)
+    .build();
 
-println!("Subject: {:?}", token.subject());
+let claims = validator.verify(token).await?;
+```
+
+That's it! The validator's ready to use. You can call `verify()` as many times as you need—the library is designed for reuse.
+
+### JWKS Validation (Remote Key Fetching)
+
+For production systems, you'll often want to fetch keys from a JWKS endpoint. Here's how the library sets this up:
+
+```rust
+use jwtiny::{AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator};
+use moka::future::Cache;
+use std::{sync::Arc, time::Duration};
+
+let client = reqwest::Client::new();
+let cache = Arc::new(
+    Cache::<RemoteCacheKey, Vec<u8>>::builder()
+        .time_to_live(Duration::from_secs(300))
+        .max_capacity(1000)
+        .build()
+);
+
+let validator = TokenValidator::new()
+    .algorithms(AlgorithmPolicy::rs512_only())
+    .issuer(|iss| iss == "https://auth.example.com")
+    .validate(ClaimsValidation::default().require_audience("my-api"))
+    .jwks(client)
+    .cache(cache)
+    .build();
+
+let claims = validator.verify(token).await?;
+```
+
+The cache reduces network requests and improves performance. Set the TTL to match the key rotation schedule of the identity provider.
+
+For testing, this works fine with [JWKServe](https://github.com/sbstjn/jwkserve) as well.
+
+### Custom Claims
+
+If you need custom claim structures, use the `#[claims]` macro:
+
+```rust
+use jwtiny::{claims, AlgorithmPolicy, ClaimsValidation, TokenValidator};
+
+#[claims]
+struct MyClaims {
+    pub role: String,
+    pub permissions: Vec<String>,
+}
+
+let validator = TokenValidator::new()
+    .algorithms(AlgorithmPolicy::rs256_only())
+    .validate(ClaimsValidation::default())
+    .key(&public_key_der)
+    .build();
+
+let claims = validator.verify_with_custom::<MyClaims>(token).await?;
+```
+
+The macro handles the standard claims (iss, sub, aud, exp, nbf, iat, jti) automatically, so you only need to define your custom fields.
+
+## API Reference
+
+### TokenValidator
+
+Configure the validator once, then reuse it for multiple verifications:
+
+```rust
+let validator = TokenValidator::new()
+    .algorithms(AlgorithmPolicy::rs512_only())  // RS256, RS384, RS512, or rsa_all()
+    .issuer(|iss| iss == "https://auth.example.com")
+    .validate(ClaimsValidation::default().require_audience("my-api"))
+    .key(&public_key_der)      // Static key (mutually exclusive with jwks)
+    .jwks(client)              // JWKS (mutually exclusive with key)
+    .cache(cache)              // Optional: cache JWKS keys
+    .build();
+
+// Verify tokens (reusable)
+let claims = validator.verify(token_str).await?;
+let custom = validator.verify_with_custom::<MyClaims>(token_str).await?;
+```
+
+### AlgorithmPolicy
+
+Control which algorithms are accepted:
+
+```rust
+AlgorithmPolicy::rs256_only()  // RS256 only
+AlgorithmPolicy::rs512_only()  // RS512 only
+AlgorithmPolicy::rsa_all()     // All RSA (default)
+```
+
+### ClaimsValidation
+
+Configure temporal and audience validation:
+
+```rust
+ClaimsValidation::default()
+    .require_audience("my-api")
+    .max_age(3600)
+    .clock_skew(60)
+    .no_exp_validation()
+    .no_nbf_validation()
+    .no_iat_validation()
+```
+
+By default, the validator checks expiration (`exp`), not-before (`nbf`), and issued-at (`iat`), with a max age of 30 minutes and no clock skew. In distributed systems, adding clock skew tolerance can help handle time synchronisation differences.
+
+## Error Handling
+
+All validation errors are returned as `jwtiny::Error`:
+
+```rust
+match validator.verify(token).await {
+    Ok(claims) => println!("Valid: {:?}", claims),
+    Err(jwtiny::Error::TokenExpired { .. }) => eprintln!("Token expired"),
+    Err(jwtiny::Error::SignatureInvalid) => eprintln!("Invalid signature"),
+    Err(e) => eprintln!("Validation failed: {:?}", e),
+}
 ```
 
 ## Examples
 
-### HMAC Validation
+Complete working examples for various web frameworks:
 
-For tokens signed with symmetric keys (HS256, HS384, HS512):
+- **Axum**: [`examples/axum/`](examples/axum/)
+- **Poem**: [`examples/poem/`](examples/poem/)
+- **Rocket**: [`examples/rocket/`](examples/rocket/)
+- **Warp**: [`examples/warp/`](examples/warp/)
 
-```rust
-use jwtiny::*;
-
-let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
-    .danger_skip_issuer_validation() // Only if providing key directly
-    .verify_signature(SignatureVerification::with_secret_hs256(b"your-256-bit-secret"))
-    .validate_token(ValidationConfig::default())
-    .run()?;
-```
-
-### RSA Public Key Validation
-
-Requires the `rsa` feature:
-
-```rust
-use jwtiny::*;
-
-let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
-    .ensure_issuer(|iss| Ok(iss == "https://auth.example.com"))
-    .verify_signature(SignatureVerification::with_rsa_rs256(public_key_der))
-    .validate_token(ValidationConfig::default())
-    .run()?;
-```
-
-### ECDSA Public Key Validation
-
-Requires the `ecdsa` feature. Supports P-256 and P-384 curves:
-
-```rust
-use jwtiny::*;
-
-let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
-    .ensure_issuer(|iss| Ok(iss == "https://auth.example.com"))
-    .verify_signature(SignatureVerification::with_ecdsa_es256(public_key_der))
-    .validate_token(ValidationConfig::default())
-    .run()?;
-```
-
-### JWKS Flow (Remote Key Fetching)
-
-Requires the `remote` feature. Fetch public keys from a JWKS endpoint:
-
-```rust
-use jwtiny::*;
-use jwtiny::remote::HttpClient;
-
-// Create an HTTP client function pointer
-let http_client: HttpClient = {
-    let client = reqwest::Client::new();
-    Box::new(move |url: String| {
-        let client = client.clone();
-        Box::pin(async move {
-            let response = client
-                .get(&url)
-                .send()
-                .await
-                .map_err(|e| Error::RemoteError(format!("network: {}", e)))?;
-            
-            if !response.status().is_success() {
-                return Err(Error::RemoteError(
-                    format!("http: status {}", response.status())
-                ));
-            }
-            
-            response.bytes().await
-                .map_err(|e| Error::RemoteError(format!("network: {}", e)))
-                .map(|b| b.to_vec())
-        })
-    })
-};
-
-// Validate with automatic key resolution from JWKS
-let token = TokenValidator::new(ParsedToken::from_string(token_str)?)
-    .ensure_issuer(|iss| {
-        // CRITICAL: Validate issuer before fetching keys
-        if iss == "https://auth.example.com" {
-            Ok(())
-        } else {
-            Err(Error::IssuerNotTrusted(iss.to_string()))
-        }
-    })
-    .verify_signature(
-        SignatureVerification::with_jwks(
-            http_client,
-            AlgorithmPolicy::recommended_asymmetric(), // RS256 + ES256
-            true  // use_cache
-        )
-    )
-    .validate_token(ValidationConfig::default())
-    .run_async()
-    .await?;
-```
-
-**Security note:** Always validate the issuer before enabling JWKS fetching. Without issuer validation, an attacker can craft a token with an arbitrary `iss` claim, causing your application to fetch keys from attacker-controlled URLs—a classic SSRF vulnerability.
-
-## API Overview
-
-The validation flow proceeds through distinct stages, each producing a new type:
-
-```rust
-// Stage 1: Parse the token string
-let parsed = ParsedToken::from_string(token_str)?;
-
-// Stage 2: Build the validation pipeline
-let token = TokenValidator::new(parsed)
-    .ensure_issuer(/* closure */)      // Required: validate issuer (or use .danger_skip_issuer_validation())
-    .verify_signature(/* config */)    // Required: verify signature
-    .validate_token(/* config */)      // Optional: defaults to ValidationConfig::default() if omitted
-    .run()?;                           // Execute all stages atomically
-
-// Stage 3: Access validated claims
-token.subject();    // Option<&str>
-token.issuer();     // Option<&str>
-token.claims();     // &Claims
-```
-
-### Issuer Validation
-
-Always validate issuers when using JWKS to prevent SSRF attacks:
-
-```rust
-// ✅ Correct: Allowlist trusted issuers
-.ensure_issuer(|iss| {
-    let trusted = ["https://auth.example.com", "https://login.example.org"];
-    trusted.contains(&iss)
-        .then_some(())
-        .ok_or(Error::IssuerNotTrusted(iss.to_string()))
-})
-
-// For same-service tokens, explicitly skip
-.danger_skip_issuer_validation()
-```
-
-### Signature Verification
-
-Choose verification based on the algorithm family:
-
-**HMAC (symmetric keys)** — always enabled:
-
-```rust
-SignatureVerification::with_secret_hs256(b"your-256-bit-secret")
-```
-
-**RSA (asymmetric keys)** — requires `rsa` feature:
-
-```rust
-SignatureVerification::with_key(
-    Key::rsa_public(public_key_der),
-    AlgorithmPolicy::rs256_only(),
-)
-```
-
-**ECDSA (asymmetric keys)** — requires `ecdsa` feature:
-
-```rust
-SignatureVerification::with_ecdsa_es256(public_key_der)
-```
-
-Use algorithm-specific constructors (preferred) or pass an explicit `AlgorithmPolicy`.
-
-### Claims Validation
-
-Configure temporal and claim-specific checks:
-
-```rust
-ValidationConfig::default()
-    .require_audience("my-api")           // Validate `aud` claim
-    .max_age(3600)                        // Token must be < 1 hour old
-    .clock_skew(60)                       // Allow 60s clock skew
-    .no_exp_validation()                  // Skip expiration (dangerous)
-    .custom(|claims| {                    // Custom validation logic
-        if claims.subject.as_deref() != Some("admin") {
-            Err(Error::ClaimValidationFailed(
-                ClaimError::Custom("Admin only".to_string())
-            ))
-        } else {
-            Ok(())
-        }
-    })
-```
-
-## Architecture
-
-The library enforces a validation pipeline through type-level state transitions:
-
-```
-ParsedToken (parsed header and payload)
-    │ .ensure_issuer()
-    ▼
-TrustedToken (issuer validated; internal type)
-    │ .verify_signature()
-    ▼
-VerifiedToken (signature verified; internal type)
-    │ .validate_token()
-    ▼
-ValidatedToken (claims validated; internal type)
-    │ .run() / .run_async()
-    ▼
-Token (public API; safe to use)
-```
-
-Only the final `Token` type is exposed publicly. Intermediate types (`TrustedToken`, `VerifiedToken`, `ValidatedToken`) are internal, which helps prevent partial validation from escaping the builder.
-
-### Algorithm Confusion Prevention
-
-Always restrict algorithms explicitly; an explicit policy is required. Prefer algorithm-specific constructors:
-
-```rust
-// ✅ Correct: Only allow the algorithm you trust
-SignatureVerification::with_secret_hs256(b"your-256-bit-secret")
-
-// ❌ Incorrect: missing explicit policy
-// SignatureVerification::with_secret(b"secret")
-```
-
-### SSRF Prevention
-
-When using JWKS, validate issuers before fetching keys:
-
-```rust
-// ✅ Correct: Allowlist trusted issuers
-.ensure_issuer(|iss| {
-    let allowed = ["https://trusted.com", "https://auth.example.com"];
-    allowed.contains(&iss)
-        .then_some(())
-        .ok_or(Error::IssuerNotTrusted(iss.to_string()))
-})
-
-// ❌ Incorrect: Attacker can make you fetch from any URL
-.danger_skip_issuer_validation()  // Dangerous with JWKS!
-```
-
-### "none" Algorithm Rejection
-
-The `"none"` algorithm (unsigned tokens) is always rejected per [RFC 8725](https://datatracker.ietf.org/doc/html/rfc8725):
-
-```rust
-ParsedToken::from_string("eyJhbGciOiJub25lIn0...")  
-// Returns: Error::NoneAlgorithmRejected
-```
-
-### Timing Attack Protection
-
-HMAC signature verification uses constant-time comparison via the [`constant_time_eq`](https://crates.io/crates/constant_time_eq) crate, which aims to mitigate timing-based key recovery attacks.
-
-## Cryptographic Backends
-
-**jwtiny** supports two backends for RSA and ECDSA:
-
-1. **`ring`** (default) — battle-tested cryptography library
-2. **`aws-lc-rs`** — FIPS-validated AWS cryptography library
-
-Select exactly one backend. The choice affects signature verification compatibility.
-
-### Using `ring` (default)
-
-```toml
-[dependencies]
-jwtiny = { version = "0.0.0", features = ["rsa", "ecdsa"] }
-```
-
-### Using `aws-lc-rs`
-
-```toml
-[dependencies]
-jwtiny = { version = "0.0.0", features = ["rsa", "ecdsa", "aws-lc-rs"] }
-```
-
-**Compatibility note:** If you're verifying tokens signed by services using `jsonwebtoken` with the `aws_lc_rs` feature (e.g., `jwkserve`), use the `aws-lc-rs` feature to ensure compatibility.
-
-## Testing
-
-**jwtiny** includes test coverage across algorithm families, edge cases, and integration scenarios.
-
-### Running Tests
+Run an example:
 
 ```bash
-# All features with default backend
-cargo test --lib --tests --bins --examples --all-features
-
-# Specific algorithm features
-cargo test --lib --tests --bins --examples
-cargo test --lib --tests --bins --examples --features rsa
-cargo test --lib --tests --bins --examples --features ecdsa
-
-# aws-lc-rs backend (for compatibility testing)
-cargo test --lib --tests --bins --examples --features rsa,aws-lc-rs
-cargo test --lib --tests --bins --examples --features ecdsa,aws-lc-rs
-
-# Remote JWKS fetching
-cargo test --lib --tests --bins --examples --features remote,rsa
-
-# Run specific test suite
-cargo test --test algorithm_round_trips --features all-algorithms
-cargo test --test jwkserve_integration --features remote,rsa,aws-lc-rs
-cargo test --test edge_cases
-```
-
-### Test Coverage
-
-- **Algorithm tests** (`tests/algorithm_round_trips.rs`): Round-trip signing and verification for HMAC, RSA, and ECDSA
-- **Integration tests** (`tests/jwkserve_integration.rs`): End-to-end RS256 verification via JWKS (requires Docker)
-- **Edge cases** (`tests/edge_cases.rs`): Token format validation, Base64URL edge cases, claims validation, algorithm confusion prevention
-- **JWK support** (`tests/jwk_support.rs`): JWK metadata handling, key selection, RSA/ECDSA key extraction
-- **JWT.io compatibility** (`tests/jwtio_compatibility.rs`): Verification of canonical JWT.io example tokens
-- **Custom headers** (`tests/custom_headers.rs`): Header field preservation (`kid`, `typ`, custom fields), field order invariance, real-world header formats
-- **Key formats** (`tests/key_formats.rs`): PKCS#8 DER, PKCS#1 DER, PEM format conversion, invalid/truncated key handling
-
-### Running Examples
-
-```bash
-cargo run --example basic
-cargo run --example multi_algorithm --features all-algorithms
+cargo run -p jwtiny-example-axum
 ```
 
 ## License
 
 MIT
 
-## Development
-
-This project was developed with assistance from AI coding companions including Claude Code and Cursor. All code has been human-reviewed, tested, and verified for correctness and security.
-
 ## References
 
 - [RFC 7515](https://datatracker.ietf.org/doc/html/rfc7515) — JSON Web Signature (JWS)
 - [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519) — JSON Web Token (JWT)
 - [RFC 8725](https://datatracker.ietf.org/doc/html/rfc8725) — JSON Web Signature Best Practices
-- [RFC 4648](https://datatracker.ietf.org/doc/html/rfc4648) — Base64URL encoding
-- [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/) — Idiomatic Rust design

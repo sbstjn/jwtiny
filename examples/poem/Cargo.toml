@@ -1,0 +1,16 @@
+[package]
+name = "jwtiny-example-poem"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+poem = "2.0"
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+jwtiny = { workspace = true }
+reqwest = { workspace = true }
+moka = { workspace = true }
+

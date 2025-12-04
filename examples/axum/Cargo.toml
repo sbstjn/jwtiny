@@ -1,0 +1,15 @@
+[package]
+name = "jwtiny-example-axum"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+axum = "0.8.7"
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+jwtiny = { workspace = true }
+reqwest = { workspace = true }
+moka = { workspace = true }

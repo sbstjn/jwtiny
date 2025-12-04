@@ -1,0 +1,60 @@
+[package]
+name = "jwtiny"
+
+authors.workspace = true
+categories.workspace = true
+description.workspace = true
+documentation.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+# Core - minimal JSON serialization
+miniserde = "0.1"
+
+# Error handling
+thiserror = "2.0"
+
+# RSA algorithms (always enabled with aws-lc-rs backend)
+aws-lc-rs = "1"
+
+# Remote fetching (JWKS, OIDC discovery)
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
+# DER encoding for JWKS
+spki = { version = "0.7", default-features = false, features = ["alloc"] }
+der = { version = "0.7", default-features = false, features = ["alloc", "derive", "oid"] }
+
+# URL parsing for validation
+url = "2.5"
+
+# Base64URL encoding/decoding (minimal features)
+base64 = { version = "0.22", default-features = false, features = ["alloc"] }
+
+# High-performance caching with lock-free reads and LRU eviction
+moka = { version = "0.12", features = ["future"] }
+
+jwtype = { path = "../jwtype" }
+jwtiny-derive = { path = "../jwtiny-derive" }
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+# For RSA key generation in tests
+rsa = { version = "0.9", features = ["std"] }
+rand = "0.8"
+# HTTP client for test helper (only used in tests)
+# reqwest moved to dependencies (without json feature to avoid serde in main deps)
+serde_json = "1.0"  # Only for tests - main library uses miniserde
+# For benchmarking
+criterion = { version = "0.5", features = ["html_reports"] }
+# HTTP mocking for tests
+mockito = "1.0"
+# base64 moved to dependencies (0.22)
+
+[lints]
+workspace = true

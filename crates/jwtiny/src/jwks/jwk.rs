@@ -122,8 +122,8 @@ impl Jwk {
                 let token_alg = algorithm.as_str();
                 if jwk_alg != token_alg {
                     return Err(Error::JwkAlgorithmMismatch {
-                        jwk_alg: jwk_alg.clone(),
-                        token_alg: token_alg.into(),
+                        jwk_alg: jwk_alg.to_string(),
+                        token_alg: token_alg.to_string(),
                     });
                 }
             }

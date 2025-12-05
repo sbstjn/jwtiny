@@ -4,7 +4,7 @@
 //! cargo run -p example-consume-body-in-extractor-or-middleware
 //! ```
 
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use axum::{
     extract::{Request, State},
@@ -44,7 +44,7 @@ async fn main() {
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
         .jwks(client)
-        .cache(Arc::new(cache))
+        .cache(cache)
         .build();
 
     let state = AppState { validator };

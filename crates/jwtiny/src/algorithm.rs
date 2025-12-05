@@ -124,8 +124,12 @@ impl AlgorithmPolicy {
             Ok(())
         } else {
             Err(Error::AlgorithmNotAllowed {
-                found: algorithm.to_string(),
-                allowed: self.allowed.iter().map(|a| a.to_string()).collect(),
+                found: algorithm.as_str().to_string(),
+                allowed: self
+                    .allowed
+                    .iter()
+                    .map(|a| a.as_str().to_string())
+                    .collect(),
             })
         }
     }

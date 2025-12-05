@@ -79,8 +79,10 @@ impl TokenValidator {
     }
 
     /// Configure JWKS cache
-    pub fn cache(&mut self, cache: Arc<Cache<RemoteCacheKey, Vec<u8>>>) -> &mut Self {
-        self.config_cache = Some(cache);
+    ///
+    /// The cache is wrapped internally in `Arc` to allow sharing across validator clones.
+    pub fn cache(&mut self, cache: Cache<RemoteCacheKey, Vec<u8>>) -> &mut Self {
+        self.config_cache = Some(Arc::new(cache));
         self
     }
 

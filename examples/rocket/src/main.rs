@@ -4,7 +4,7 @@
 //! cargo run -p jwtiny-example-rocket
 //! ```
 
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use jwtiny::{claims, AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator};
 use moka::future::Cache;
@@ -103,7 +103,7 @@ async fn rocket() -> _ {
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
         .jwks(client)
-        .cache(Arc::new(cache))
+        .cache(cache)
         .build();
 
     let state = AppState { validator };

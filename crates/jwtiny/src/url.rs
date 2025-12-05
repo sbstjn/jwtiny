@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_validate_issuer_url_too_long() {
-        let long_url = "https://example.com/".to_string() + &"a".repeat(MAX_ISSUER_URL_LENGTH);
+        let long_url = format!("https://example.com/{}", "a".repeat(MAX_ISSUER_URL_LENGTH));
         assert!(validate_issuer_url(&long_url).is_err());
     }
 
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_validate_jwks_uri_too_long() {
-        let long_uri = "https://example.com/".to_string() + &"a".repeat(MAX_JWKS_URI_LENGTH);
+        let long_uri = format!("https://example.com/{}", "a".repeat(MAX_JWKS_URI_LENGTH));
         assert!(validate_jwks_uri(&long_uri).is_err());
     }
 }

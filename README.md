@@ -46,15 +46,13 @@ For production systems, you'll often want to fetch keys from a JWKS endpoint. He
 ```rust
 use jwtiny::{AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator};
 use moka::future::Cache;
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 let client = reqwest::Client::new();
-let cache = Arc::new(
-    Cache::<RemoteCacheKey, Vec<u8>>::builder()
-        .time_to_live(Duration::from_secs(300))
-        .max_capacity(1000)
-        .build()
-);
+let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    .time_to_live(Duration::from_secs(300))
+    .max_capacity(1000)
+    .build();
 
 let validator = TokenValidator::new()
     .algorithms(AlgorithmPolicy::rs512_only())

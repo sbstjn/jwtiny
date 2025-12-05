@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use jwtiny::{AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator, claims};
 use moka::future::Cache;
@@ -68,7 +68,7 @@ async fn test_remote_machine() {
         .algorithms(AlgorithmPolicy::rs512_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
-        .cache(Arc::new(cache))
+        .cache(cache)
         .jwks(client);
 
     let result = validator.verify(&token_str).await;
@@ -128,7 +128,7 @@ async fn test_remote_machine_with_custom_claims() {
         .algorithms(AlgorithmPolicy::rs512_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
-        .cache(Arc::new(cache))
+        .cache(cache)
         .jwks(client);
 
     let result = validator.verify_with_custom::<CustomClaims>(&token_str).await;

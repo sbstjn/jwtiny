@@ -4,7 +4,7 @@
 //! cargo run -p jwtiny-example-poem
 //! ```
 
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, RemoteCacheKey, TokenValidator};
 use moka::future::Cache;
@@ -109,7 +109,7 @@ async fn main() -> std::io::Result<()> {
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
         .jwks(client)
-        .cache(Arc::new(cache))
+        .cache(cache)
         .build();
 
     let state = AppState { validator };

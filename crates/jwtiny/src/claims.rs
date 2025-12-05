@@ -235,13 +235,13 @@ pub(crate) fn validate_claims(
             Some(aud) => {
                 if aud != required_aud.as_str() {
                     return Err(Error::TokenAudienceMismatch {
-                        expected: required_aud.clone(),
+                        expected: required_aud.to_string(),
                         found: vec![aud.to_string()],
                     });
                 }
             }
             None => {
-                return Err(Error::TokenMissingClaim("aud".to_string()));
+                return Err(Error::TokenMissingClaim("aud".into()));
             }
         }
     }

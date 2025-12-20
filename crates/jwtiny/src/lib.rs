@@ -20,7 +20,7 @@ pub use error::{Error, Result};
 pub use jwks::RemoteCacheKey;
 pub use validator::TokenValidator;
 
+pub use claims::StandardClaims;
 pub use jwtiny_derive::claims;
-pub use jwtype::StandardClaims;
 
 pub(crate) mod limits;

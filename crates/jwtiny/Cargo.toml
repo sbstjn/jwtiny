@@ -40,7 +40,6 @@ base64 = { version = "0.22", default-features = false, features = ["alloc"] }
 # High-performance caching with lock-free reads and LRU eviction
 moka = { version = "0.12", features = ["future"] }
 
-jwtype = { path = "../jwtype" }
 jwtiny-derive = { path = "../jwtiny-derive" }
 
 [dev-dependencies]

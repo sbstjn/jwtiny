@@ -1,5 +1,6 @@
 use crate::AlgorithmType;
 use crate::algorithm::AlgorithmPolicy;
+use crate::claims::StandardClaims;
 use crate::claims::{ClaimsValidation, validate_claims};
 use crate::error::{Error, Result};
 use crate::header::TokenHeader;
@@ -11,7 +12,6 @@ use crate::limits::{
 };
 use crate::url::validate_issuer_url;
 use crate::utils::base64url;
-use jwtype::StandardClaims;
 use moka::future::Cache;
 use std::sync::Arc;
 

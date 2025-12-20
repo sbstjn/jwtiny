@@ -65,7 +65,7 @@ pub fn claims(_args: TokenStream, input: TokenStream) -> TokenStream {
             #existing_fields
         }
 
-        impl #generics jwtype::StandardClaims for #struct_name #generics {
+        impl #generics jwtiny::StandardClaims for #struct_name #generics {
             fn issuer(&self) -> Option<&str> {
                 self.issuer.as_deref()
             }

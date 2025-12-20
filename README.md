@@ -95,7 +95,11 @@ The macro handles the standard claims (iss, sub, aud, exp, nbf, iat, jti) automa
 
 ## Performance
 
-For ECDSA algorithms, jwtiny is particularly efficient—ES384 performance is over 3x faster than jsonwebtoken, while ES256 shows a solid 8% improvement. RSA performance gains scale with key size: you'll see roughly 18–20% improvements with 2048-bit keys, 26–27% with 3072-bit keys, and around 30–31% with 4096-bit keys, regardless of the hash variant (RS256, RS384, or RS512).
+For ECDSA algorithms, `jwtiny` is particularly efficient — ES384 performance is over 3x faster than `jsonwebtoken`, while ES256 shows a solid 8% improvement. RSA performance gains scale with key size: you'll see roughly 18–20% improvements with 2048-bit keys, 26–27% with 3072-bit keys, and around 30–31% with 4096-bit keys, regardless of the hash variant (RS256, RS384, or RS512):
+
+- **Max Advantage**: 243% faster (ES384)
+- **Key Size Impact**: 3.3× faster with 2048-bit vs 4096-bit keys
+- **Avg Advantage**: +21% overall improvement
 
 ![jwtiny-jsonwebtoken-performance](/performance.png)
 

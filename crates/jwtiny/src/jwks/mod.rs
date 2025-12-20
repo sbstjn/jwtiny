@@ -2,7 +2,7 @@
 pub(crate) mod caching;
 pub(crate) mod jwk;
 
-/// Cache key type for storing resolved JWKS keys in moka caches
+/// Cache key type for storing resolved keys in moka caches
 use crate::error::{Error, Result};
 use crate::jwks::jwk::Jwk;
 use crate::limits::{MAX_JWK_SET_SIZE, MAX_JWKS_RESPONSE_SIZE};
@@ -72,11 +72,11 @@ pub(crate) async fn fetch_jwks(client: &reqwest::Client, jwks_uri: &str) -> Resu
     Ok(set)
 }
 
-/// Find a key in a JWKS by kid matching
+/// Find a key in a JWKS by key ID (kid) matching
 ///
 /// Returns an error if:
 /// - Multiple keys match the same kid (ambiguous)
-/// - No kid is provided but JWKS contains multiple keys (ambiguous)
+/// - No kid is provided but the JWKS contains multiple keys (ambiguous)
 pub(crate) fn find_key_by_kid<'a>(jwks: &'a JwkSet, kid: Option<&str>) -> Result<&'a Jwk> {
     if let Some(kid) = kid {
         // Find all keys matching this kid

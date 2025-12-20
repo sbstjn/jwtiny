@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-/// JWTiny Errors
+/// jwtiny errors
 #[derive(Error, Debug, Clone, PartialEq)]
 pub enum Error {
     #[error("Token too large: {size} bytes (maximum: {max} bytes)")]
@@ -149,5 +149,5 @@ pub enum Error {
     MaxAgeTooLarge { value: u64, max: u64 },
 }
 
-/// Result type alias for JWTiny operations
+/// Result type alias for jwtiny operations
 pub type Result<T> = std::result::Result<T, Error>;

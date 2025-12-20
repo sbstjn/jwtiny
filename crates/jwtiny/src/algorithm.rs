@@ -8,11 +8,17 @@ use aws_lc_rs::signature::{self, UnparsedPublicKey};
 /// Algorithm identifier from JWT header
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AlgorithmType {
+    /// RSA with SHA-256
     RS256,
+    /// RSA with SHA-384
     RS384,
+    /// RSA with SHA-512
     RS512,
+    /// ECDSA with P-256 and SHA-256
     ES256,
+    /// ECDSA with P-384 and SHA-384
     ES384,
+    /// ECDSA with P-521 and SHA-512
     ES512,
 }
 
@@ -99,31 +105,29 @@ impl AsRef<str> for AlgorithmType {
     }
 }
 
-/// Policy for allowed algorithms
+/// Configure accepted JWT signature algorithms
 #[derive(Debug, Clone)]
 pub struct AlgorithmPolicy {
     allowed: Vec<AlgorithmType>,
 }
 
 impl AlgorithmPolicy {
-    /// Policy that allows only RS256
+    /// Only accept RS256
     pub fn rs256_only() -> Self {
         Self::allow_only([AlgorithmType::RS256])
     }
 
-    /// Policy that allows only RS384
+    /// Only accept RS384
     pub fn rs384_only() -> Self {
         Self::allow_only([AlgorithmType::RS384])
     }
 
-    /// Policy that allows only RS512
+    /// Only accept RS512
     pub fn rs512_only() -> Self {
         Self::allow_only([AlgorithmType::RS512])
     }
 
-    /// Policy that allows all RSA algorithms (RS256, RS384, RS512)
-    ///
-    /// Equivalent to `Default::default()`.
+    /// Accept all RSA algorithms (RS256, RS384, RS512)
     pub fn rsa_all() -> Self {
         Self::allow_only([
             AlgorithmType::RS256,
@@ -132,22 +136,22 @@ impl AlgorithmPolicy {
         ])
     }
 
-    /// Policy that allows only ES256
+    /// Only accept ES256
     pub fn es256_only() -> Self {
         Self::allow_only([AlgorithmType::ES256])
     }
 
-    /// Policy that allows only ES384
+    /// Only accept ES384
     pub fn es384_only() -> Self {
         Self::allow_only([AlgorithmType::ES384])
     }
 
-    /// Policy that allows only ES512
+    /// Only accept ES512
     pub fn es512_only() -> Self {
         Self::allow_only([AlgorithmType::ES512])
     }
 
-    /// Policy that allows all ECDSA algorithms (ES256, ES384, ES512)
+    /// Accept all ECDSA algorithms (ES256, ES384, ES512)
     pub fn ecdsa_all() -> Self {
         Self::allow_only([
             AlgorithmType::ES256,
@@ -156,7 +160,7 @@ impl AlgorithmPolicy {
         ])
     }
 
-    /// Create a policy that allows only specific algorithms
+    /// Accept only specific algorithms
     ///
     /// Accepts an array of algorithms directly for zero-allocation construction.
     ///

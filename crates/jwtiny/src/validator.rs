@@ -21,9 +21,9 @@ use std::sync::Arc;
 #[allow(clippy::type_complexity)]
 pub(crate) type IssuerValidator = Arc<dyn Fn(&str) -> bool + Send + Sync + 'static>;
 
-/// JWT token validator
+/// JWT validator
 ///
-/// The validator is configured once and can be reused for multiple token verifications.
+/// Configure once at application startup, then reuse for multiple verifications.
 /// The claim type is specified when calling `verify`.
 #[derive(Clone)]
 pub struct TokenValidator {
@@ -57,7 +57,7 @@ impl TokenValidator {
     /// Configure issuer validation
     ///
     /// The validator function receives the issuer string and returns `true` if valid,
-    /// `false` otherwise. Invalid issuers will result in a `TokenInvalidClaim` error.
+    /// `false` otherwise. Invalid issuers result in a `TokenInvalidClaim` error.
     pub fn issuer<F>(mut self, validator: F) -> Self
     where
         F: Fn(&str) -> bool + Send + Sync + 'static,
@@ -76,6 +76,8 @@ impl TokenValidator {
     ///
     /// Accepts `Arc<Vec<u8>>` for efficient sharing. If you have a slice or owned Vec,
     /// wrap it in `Arc::new()` before passing.
+    ///
+    /// The key must be DER-encoded SubjectPublicKeyInfo format.
     ///
     /// # Examples
     ///
@@ -102,12 +104,16 @@ impl TokenValidator {
     /// Configure JWKS cache
     ///
     /// The cache is wrapped internally in `Arc` to allow sharing across validator clones.
+    /// Keys are cached by issuer and key ID (kid) to avoid redundant fetches.
     pub fn cache(mut self, cache: Cache<String, Vec<u8>>) -> Self {
         self.config_cache = Some(Arc::new(cache));
         self
     }
 
     /// Configure JWKS client for remote key fetching
+    ///
+    /// The client is used to fetch keys from JWKS endpoints. Issuer validation
+    /// must be configured separately using `issuer()`.
     pub fn jwks(mut self, client: reqwest::Client) -> Self {
         self.config_jwks = Some(client);
         self
@@ -115,18 +121,18 @@ impl TokenValidator {
 }
 
 impl TokenValidator {
-    /// Verify a JWT token string
+    /// Verify a JWT
     ///
-    /// Returns the parsed and validated claims if verification succeeds.
+    /// Returns parsed and validated claims if verification succeeds.
     /// Uses the default `Claims` type.
     pub async fn verify(&self, token: &str) -> Result<crate::claims::Claims> {
         self.verify_with_custom::<crate::claims::Claims>(token)
             .await
     }
 
-    /// Verify a JWT token string with a custom claim type
+    /// Verify a JWT with a custom claim type
     ///
-    /// Returns the parsed and validated claims if verification succeeds.
+    /// Returns parsed and validated claims if verification succeeds.
     /// The claim type `C` must implement `miniserde::Deserialize` and `StandardClaims`.
     pub async fn verify_with_custom<C>(&self, token: &str) -> Result<C>
     where

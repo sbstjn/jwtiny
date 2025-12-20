@@ -6,18 +6,33 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
 
-/// Generates standard JWT claim fields and implements `StandardClaims` trait.
+/// Generate standard JWT claim fields and implement `StandardClaims` trait
 ///
-/// Fields included:
-/// - Issuer (`iss`)
-/// - Subject (`sub`)
-/// - Audience (`aud`)
-/// - Expiration (`exp`)
-/// - Not Before (`nbf`)
-/// - Issued At (`iat`)
-/// - JWT ID (`jti`)
+/// Adds the following fields to the struct:
+/// - `issuer` (iss) - principal that issued the JWT
+/// - `subject` (sub) - principal that is the subject of the JWT
+/// - `audience` (aud) - recipients the JWT is intended for
+/// - `expiration` (exp) - expiration time in seconds since Unix epoch
+/// - `not_before` (nbf) - time before which the JWT must not be accepted
+/// - `issued_at` (iat) - time at which the JWT was issued
+/// - `jwt_id` (jti) - unique identifier for the JWT
 ///
-/// And implements the `StandardClaims` trait.
+/// # Example
+///
+/// ```rust
+/// use jwtiny::claims;
+///
+/// /// Standard JWT claims
+/// #[claims]
+/// pub struct CustomClaims {
+///     #[serde(rename = "email")]
+///     pub email: Option<String>,
+///     #[serde(rename = "role")]
+///     pub role: Option<String>,
+///     #[serde(rename = "permission_list")]
+///     pub permissions: Option<Vec<String>>,
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn claims(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -45,20 +60,28 @@ pub fn claims(_args: TokenStream, input: TokenStream) -> TokenStream {
     // Generate the expanded struct with standard claims fields
     // Always include Debug, Clone, and Deserialize derives
     let expanded = quote! {
+        /// Standard JWT claims
         #[derive(Debug, Clone, miniserde::Deserialize)]
         #vis struct #struct_name #generics {
+            /// Issuer (iss) - principal that issued the JWT
             #[serde(rename = "iss")]
             pub issuer: Option<String>,
+            /// Subject (sub) - principal that is the subject of the JWT
             #[serde(rename = "sub")]
             pub subject: Option<String>,
+            /// Audience (aud) - recipients the JWT is intended for
             #[serde(rename = "aud")]
             pub audience: Option<String>,
+            /// Expiration (exp) - expiration time in seconds since Unix epoch
             #[serde(rename = "exp")]
             pub expiration: Option<i64>,
+            /// Not Before (nbf) - time before which the JWT must not be accepted
             #[serde(rename = "nbf")]
             pub not_before: Option<i64>,
+            /// Issued At (iat) - time at which the JWT was issued
             #[serde(rename = "iat")]
             pub issued_at: Option<i64>,
+            /// JWT ID (jti) - unique identifier for the JWT
             #[serde(rename = "jti")]
             pub jwt_id: Option<String>,
 

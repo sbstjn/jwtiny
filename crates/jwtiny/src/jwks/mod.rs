@@ -80,39 +80,36 @@ pub(crate) async fn fetch_jwks(client: &reqwest::Client, jwks_uri: &str) -> Resu
 /// - Multiple keys match the same kid (ambiguous)
 /// - No kid is provided but JWKS contains multiple keys (ambiguous)
 pub(crate) fn find_key_by_kid<'a>(jwks: &'a JwkSet, kid: Option<&str>) -> Result<&'a Jwk> {
-    match kid {
-        Some(kid) => {
-            // Find all keys matching this kid
-            let matches: Vec<_> = jwks
-                .keys
-                .iter()
-                .filter(|k| k.kid.as_deref() == Some(kid))
-                .collect();
+    if let Some(kid) = kid {
+        // Find all keys matching this kid
+        let matches: Vec<_> = jwks
+            .keys
+            .iter()
+            .filter(|k| k.kid.as_deref() == Some(kid))
+            .collect();
 
-            if matches.is_empty() {
-                Err(Error::RemoteError("jwks: no matching key found".into()))
-            } else if matches.len() > 1 {
-                // Multiple keys with same kid - ambiguous, fail verification
-                Err(Error::MultipleKeysFound {
-                    kid: kid.into(),
-                    count: matches.len(),
-                })
-            } else {
-                Ok(matches[0])
-            }
+        if matches.is_empty() {
+            Err(Error::RemoteError("jwks: no matching key found".into()))
+        } else if matches.len() > 1 {
+            // Multiple keys with same kid - ambiguous, fail verification
+            Err(Error::MultipleKeysFound {
+                kid: kid.into(),
+                count: matches.len(),
+            })
+        } else {
+            Ok(matches[0])
         }
-        None => {
-            // No kid specified
-            let key_count = jwks.keys.len();
-            if key_count == 0 {
-                Err(Error::RemoteError("jwks: no keys in set".into()))
-            } else if key_count == 1 {
-                // Single key without kid - safe fallback
-                Ok(&jwks.keys[0])
-            } else {
-                // Multiple keys without kid - ambiguous, require explicit kid
-                Err(Error::KeyIdRequired { key_count })
-            }
+    } else {
+        // No kid specified
+        let key_count = jwks.keys.len();
+        if key_count == 0 {
+            Err(Error::RemoteError("jwks: no keys in set".into()))
+        } else if key_count == 1 {
+            // Single key without kid - safe fallback
+            Ok(&jwks.keys[0])
+        } else {
+            // Multiple keys without kid - ambiguous, require explicit kid
+            Err(Error::KeyIdRequired { key_count })
         }
     }
 }
@@ -277,6 +274,9 @@ mod tests {
             key_use: None,
             n: Some("n1".to_string()),
             e: Some("e1".to_string()),
+            crv: None,
+            x: None,
+            y: None,
         };
 
         let jwk2 = Jwk {
@@ -286,6 +286,9 @@ mod tests {
             key_use: None,
             n: Some("n2".to_string()),
             e: Some("e2".to_string()),
+            crv: None,
+            x: None,
+            y: None,
         };
 
         let jwk_set = JwkSet {
@@ -322,6 +325,9 @@ mod tests {
             key_use: None,
             n: Some("n1".to_string()),
             e: Some("e1".to_string()),
+            crv: None,
+            x: None,
+            y: None,
         };
 
         let jwk_set = JwkSet {
@@ -343,6 +349,9 @@ mod tests {
             key_use: None,
             n: Some("n1".to_string()),
             e: Some("e1".to_string()),
+            crv: None,
+            x: None,
+            y: None,
         };
 
         let jwk2 = Jwk {
@@ -352,6 +361,9 @@ mod tests {
             key_use: None,
             n: Some("n2".to_string()),
             e: Some("e2".to_string()),
+            crv: None,
+            x: None,
+            y: None,
         };
 
         let jwk_set = JwkSet {

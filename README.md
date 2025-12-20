@@ -9,7 +9,7 @@
 
 **jwtiny** validates JWT tokens efficiently in production Rust applications. The validator follows a reusable pattern: configure it once at application startup, then verify tokens with minimal allocations. The validator can be shared across requests, which reduces memory footprint and improves performance.
 
-The library supports RSA algorithms (RS256, RS384, RS512) with an aws-lc-rs backend, and provides JWKS support for remote key fetching over HTTPS (rustls) with caching. It's been tested with [Axum](examples/axum/), [Poem](examples/poem/), [Rocket](examples/rocket/), and [Warp](examples/warp/).
+The library supports RSA (RS256, RS384, RS512) and ECDSA (ES256, ES384, ES512) algorithms with an aws-lc-rs backend, and provides JWKS support for remote key fetching over HTTPS (rustls) with caching. It's been tested with [Axum](examples/axum/), [Poem](examples/poem/), [Rocket](examples/rocket/), and [Warp](examples/warp/).
 
 ## Installation
 
@@ -101,7 +101,7 @@ Configure the validator once, then reuse it for multiple verifications:
 
 ```rust
 let validator = TokenValidator::new()
-    .algorithms(AlgorithmPolicy::rs512_only())  // RS256, RS384, RS512, or rsa_all()
+    .algorithms(AlgorithmPolicy::rs512_only())  // See AlgorithmPolicy section below
     .issuer(|iss| iss == "https://auth.example.com")
     .validate(ClaimsValidation::default().require_audience("my-api"))
     .key(&public_key_der)      // Static key (mutually exclusive with jwks)
@@ -119,10 +119,20 @@ let custom = validator.verify_with_custom::<MyClaims>(token_str).await?;
 Control which algorithms are accepted:
 
 ```rust
+// RSA algorithms
 AlgorithmPolicy::rs256_only()  // RS256 only
+AlgorithmPolicy::rs384_only()  // RS384 only
 AlgorithmPolicy::rs512_only()  // RS512 only
-AlgorithmPolicy::rsa_all()     // All RSA (default)
+AlgorithmPolicy::rsa_all()     // All RSA algorithms
+
+// ECDSA algorithms
+AlgorithmPolicy::es256_only()  // ES256 (P-256) only
+AlgorithmPolicy::es384_only()  // ES384 (P-384) only
+AlgorithmPolicy::es512_only()  // ES512 (P-521) only
+AlgorithmPolicy::ecdsa_all()   // All ECDSA algorithms
 ```
+
+**Note**: The default policy is `rs256_only()` for security. Always configure the policy explicitly to match your identity provider's signing algorithm.
 
 ### ClaimsValidation
 

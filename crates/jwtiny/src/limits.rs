@@ -31,7 +31,8 @@ pub(crate) const MAX_DECODED_HEADER_SIZE: usize = 8 * 1024;
 pub(crate) const MAX_DECODED_PAYLOAD_SIZE: usize = 64 * 1024;
 
 /// Maximum size for decoded signature bytes (1KB)
-/// RSA signatures are typically 256-512 bytes, but we allow margin for larger keys
+/// RSA signatures are typically 256-512 bytes
+/// ECDSA signatures vary by curve: P-256 (~64 bytes), P-384 (~96 bytes), P-521 (~132 bytes)
 pub(crate) const MAX_DECODED_SIGNATURE_SIZE: usize = 1024;
 
 /// Maximum size for Base64URL-encoded signature string (1.5KB)
@@ -57,6 +58,18 @@ pub(crate) const MAX_JWK_KID_SIZE: usize = 256;
 /// Maximum size for JWK algorithm (alg) field (16 bytes)
 /// Algorithm names are short (e.g., "RS256", "RS384", "RS512")
 pub(crate) const MAX_JWK_ALG_SIZE: usize = 16;
+
+/// Maximum size for JWK curve (crv) field (16 bytes)
+/// Curve names are short (e.g., "P-256", "P-384", "P-521")
+pub(crate) const MAX_JWK_CRV_SIZE: usize = 16;
+
+/// Maximum size for Base64URL-encoded ECDSA x-coordinate field (128 bytes)
+/// P-521 has 66-byte coordinates, encoding to ~88 bytes Base64URL
+pub(crate) const MAX_JWK_X_SIZE: usize = 128;
+
+/// Maximum size for Base64URL-encoded ECDSA y-coordinate field (128 bytes)
+/// P-521 has 66-byte coordinates, encoding to ~88 bytes Base64URL
+pub(crate) const MAX_JWK_Y_SIZE: usize = 128;
 
 // ============================================================================
 // Claim string length limits (P0 - Critical)

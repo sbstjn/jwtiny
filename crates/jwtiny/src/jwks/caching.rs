@@ -29,8 +29,8 @@ impl RemoteCacheKey {
     fn from_resolved(issuer: &str, algorithm: &AlgorithmType, kid: Option<&str>) -> Self {
         Self::new(
             issuer.to_string(),
-            algorithm.as_str().to_string(),
-            kid.map(|s| s.to_string()),
+            algorithm.to_string(),
+            kid.map(ToString::to_string),
         )
     }
 }

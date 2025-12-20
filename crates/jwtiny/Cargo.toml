@@ -22,7 +22,7 @@ miniserde = "0.1"
 thiserror = "2.0"
 
 # RSA algorithms (always enabled with aws-lc-rs backend)
-aws-lc-rs = "1"
+aws-lc-rs = "1.15.2"
 
 # Remote fetching (JWKS, OIDC discovery)
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
@@ -56,6 +56,11 @@ criterion = { version = "0.5", features = ["html_reports"] }
 # HTTP mocking for tests
 mockito = "1.0"
 # base64 moved to dependencies (0.22)
+# For cross-validation testing
+jsonwebtoken = "9.3"
+async-trait = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
 [lints]
 workspace = true

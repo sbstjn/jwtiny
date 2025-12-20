@@ -11,6 +11,9 @@ pub enum AlgorithmType {
     RS256,
     RS384,
     RS512,
+    ES256,
+    ES384,
+    ES512,
 }
 
 impl AlgorithmType {
@@ -29,25 +32,37 @@ impl AlgorithmType {
             "RS256" => Ok(AlgorithmType::RS256),
             "RS384" => Ok(AlgorithmType::RS384),
             "RS512" => Ok(AlgorithmType::RS512),
+            "ES256" => Ok(AlgorithmType::ES256),
+            "ES384" => Ok(AlgorithmType::ES384),
+            "ES512" => Ok(AlgorithmType::ES512),
             _ => Err(Error::AlgorithmUnsupported(s.into())),
         }
     }
 
     /// Convert to string representation
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             AlgorithmType::RS256 => "RS256",
             AlgorithmType::RS384 => "RS384",
             AlgorithmType::RS512 => "RS512",
+            AlgorithmType::ES256 => "ES256",
+            AlgorithmType::ES384 => "ES384",
+            AlgorithmType::ES512 => "ES512",
         }
     }
 
-    /// Get the verification algorithm for RSA signature verification
+    /// Get the verification algorithm for signature verification
+    ///
+    /// Note: JWT ECDSA signatures use IEEE P1363 format (fixed-length R||S),
+    /// not ASN.1 DER encoding, as per RFC 7518 Section 3.4.
     fn verification_algorithm(&self) -> &'static dyn signature::VerificationAlgorithm {
         match self {
             AlgorithmType::RS256 => &signature::RSA_PKCS1_2048_8192_SHA256,
             AlgorithmType::RS384 => &signature::RSA_PKCS1_2048_8192_SHA384,
             AlgorithmType::RS512 => &signature::RSA_PKCS1_2048_8192_SHA512,
+            AlgorithmType::ES256 => &signature::ECDSA_P256_SHA256_FIXED,
+            AlgorithmType::ES384 => &signature::ECDSA_P384_SHA384_FIXED,
+            AlgorithmType::ES512 => &signature::ECDSA_P521_SHA512_FIXED,
         }
     }
 
@@ -56,7 +71,7 @@ impl AlgorithmType {
     /// # Arguments
     /// * `signing_input` - The data that was signed (header.payload)
     /// * `signature` - The Base64URL-encoded signature
-    /// * `key_der` - The DER-encoded RSA public key (SubjectPublicKeyInfo)
+    /// * `key_der` - The DER-encoded public key (SubjectPublicKeyInfo)
     pub(crate) fn verify_signature(
         &self,
         signing_input: &str,
@@ -75,6 +90,12 @@ impl AlgorithmType {
 impl std::fmt::Display for AlgorithmType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.as_str())
+    }
+}
+
+impl AsRef<str> for AlgorithmType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
@@ -111,6 +132,30 @@ impl AlgorithmPolicy {
         ])
     }
 
+    /// Policy that allows only ES256
+    pub fn es256_only() -> Self {
+        Self::allow_only(vec![AlgorithmType::ES256])
+    }
+
+    /// Policy that allows only ES384
+    pub fn es384_only() -> Self {
+        Self::allow_only(vec![AlgorithmType::ES384])
+    }
+
+    /// Policy that allows only ES512
+    pub fn es512_only() -> Self {
+        Self::allow_only(vec![AlgorithmType::ES512])
+    }
+
+    /// Policy that allows all ECDSA algorithms (ES256, ES384, ES512)
+    pub fn ecdsa_all() -> Self {
+        Self::allow_only(vec![
+            AlgorithmType::ES256,
+            AlgorithmType::ES384,
+            AlgorithmType::ES512,
+        ])
+    }
+
     /// Create a policy that allows only specific algorithms
     pub fn allow_only(algorithms: Vec<AlgorithmType>) -> Self {
         Self {
@@ -124,12 +169,8 @@ impl AlgorithmPolicy {
             Ok(())
         } else {
             Err(Error::AlgorithmNotAllowed {
-                found: algorithm.as_str().to_string(),
-                allowed: self
-                    .allowed
-                    .iter()
-                    .map(|a| a.as_str().to_string())
-                    .collect(),
+                found: algorithm.to_string(),
+                allowed: self.allowed.iter().map(ToString::to_string).collect(),
             })
         }
     }
@@ -153,15 +194,7 @@ mod tests {
         ));
 
         assert!(matches!(
-            AlgorithmType::from_str("ES512"),
-            Err(Error::AlgorithmUnsupported(_))
-        ));
-        assert!(matches!(
-            AlgorithmType::from_str("ES256"),
-            Err(Error::AlgorithmUnsupported(_))
-        ));
-        assert!(matches!(
-            AlgorithmType::from_str("ES256"),
+            AlgorithmType::from_str("HS256"),
             Err(Error::AlgorithmUnsupported(_))
         ));
         assert!(matches!(
@@ -189,6 +222,18 @@ mod tests {
             AlgorithmType::from_str("RS512").unwrap(),
             AlgorithmType::RS512
         );
+        assert_eq!(
+            AlgorithmType::from_str("ES256").unwrap(),
+            AlgorithmType::ES256
+        );
+        assert_eq!(
+            AlgorithmType::from_str("ES384").unwrap(),
+            AlgorithmType::ES384
+        );
+        assert_eq!(
+            AlgorithmType::from_str("ES512").unwrap(),
+            AlgorithmType::ES512
+        );
     }
 
     #[test]
@@ -196,6 +241,9 @@ mod tests {
         assert_eq!(format!("{}", AlgorithmType::RS256), "RS256");
         assert_eq!(format!("{}", AlgorithmType::RS384), "RS384");
         assert_eq!(format!("{}", AlgorithmType::RS512), "RS512");
+        assert_eq!(format!("{}", AlgorithmType::ES256), "ES256");
+        assert_eq!(format!("{}", AlgorithmType::ES384), "ES384");
+        assert_eq!(format!("{}", AlgorithmType::ES512), "ES512");
     }
 
     #[test]
@@ -203,6 +251,9 @@ mod tests {
         assert_eq!(AlgorithmType::RS256.as_str(), "RS256");
         assert_eq!(AlgorithmType::RS384.as_str(), "RS384");
         assert_eq!(AlgorithmType::RS512.as_str(), "RS512");
+        assert_eq!(AlgorithmType::ES256.as_str(), "ES256");
+        assert_eq!(AlgorithmType::ES384.as_str(), "ES384");
+        assert_eq!(AlgorithmType::ES512.as_str(), "ES512");
     }
 
     #[test]

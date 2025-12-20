@@ -1,7 +1,7 @@
 //! Run with
 //!
 //! ```not_rust
-//! cargo run -p example-consume-body-in-extractor-or-middleware
+//! cargo run -p jwtiny-example-axum
 //! ```
 
 use std::time::Duration;

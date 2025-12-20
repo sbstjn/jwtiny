@@ -32,10 +32,11 @@
 
 use super::ValidationOutcome;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
-use jwtiny::{AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator};
+use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::sync::Arc;
 use std::time::Duration;
 
 /// Trait for jwtiny validators
@@ -79,15 +80,14 @@ impl JwtinyValidator {
         algorithm_policy: AlgorithmPolicy,
         claims_validation: ClaimsValidation,
     ) -> Self {
-        let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+        let cache = Cache::<String, Vec<u8>>::builder()
             .time_to_live(Duration::from_secs(300))
             .max_capacity(1000)
             .build();
 
         let client = reqwest::Client::new();
 
-        let mut validator = TokenValidator::new();
-        validator
+        let validator = TokenValidator::new()
             .algorithms(algorithm_policy)
             .issuer(move |iss| iss.starts_with(&base_url))
             .validate(claims_validation)
@@ -103,11 +103,10 @@ impl JwtinyValidator {
         algorithm_policy: AlgorithmPolicy,
         claims_validation: ClaimsValidation,
     ) -> Self {
-        let mut validator = TokenValidator::new();
-        validator
+        let validator = TokenValidator::new()
             .algorithms(algorithm_policy)
             .validate(claims_validation)
-            .key(&key_der);
+            .key(Arc::new(key_der));
 
         Self { validator }
     }

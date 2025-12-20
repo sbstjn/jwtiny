@@ -26,13 +26,13 @@ cargo add jwtiny
 When you have a static public key, configure the validator like this:
 
 ```rust
+use std::sync::Arc;
 use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator};
 
 let validator = TokenValidator::new()
     .algorithms(AlgorithmPolicy::rs512_only())
     .validate(ClaimsValidation::default())
-    .key(&public_key_der)
-    .build();
+    .key(Arc::new(public_key_der));
 
 let claims = validator.verify(token).await?;
 ```
@@ -44,12 +44,12 @@ That's it! The validator's ready to use. You can call `verify()` as many times a
 For production systems, you'll often want to fetch keys from a JWKS endpoint. Here's how the library sets this up:
 
 ```rust
-use jwtiny::{AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator};
+use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use std::time::Duration;
 
 let client = reqwest::Client::new();
-let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+let cache = Cache::<String, Vec<u8>>::builder()
     .time_to_live(Duration::from_secs(300))
     .max_capacity(1000)
     .build();
@@ -59,8 +59,7 @@ let validator = TokenValidator::new()
     .issuer(|iss| iss == "https://auth.example.com")
     .validate(ClaimsValidation::default().require_audience("my-api"))
     .jwks(client)
-    .cache(cache)
-    .build();
+    .cache(cache);
 
 let claims = validator.verify(token).await?;
 ```
@@ -74,6 +73,7 @@ For testing, this works fine with [JWKServe](https://github.com/sbstjn/jwkserve)
 If you need custom claim structures, use the `#[claims]` macro:
 
 ```rust
+use std::sync::Arc;
 use jwtiny::{claims, AlgorithmPolicy, ClaimsValidation, TokenValidator};
 
 #[claims]
@@ -85,8 +85,7 @@ struct MyClaims {
 let validator = TokenValidator::new()
     .algorithms(AlgorithmPolicy::rs256_only())
     .validate(ClaimsValidation::default())
-    .key(&public_key_der)
-    .build();
+    .key(Arc::new(public_key_der));
 
 let claims = validator.verify_with_custom::<MyClaims>(token).await?;
 ```
@@ -100,14 +99,15 @@ The macro handles the standard claims (iss, sub, aud, exp, nbf, iat, jti) automa
 Configure the validator once, then reuse it for multiple verifications:
 
 ```rust
+use std::sync::Arc;
+
 let validator = TokenValidator::new()
     .algorithms(AlgorithmPolicy::rs512_only())  // See AlgorithmPolicy section below
     .issuer(|iss| iss == "https://auth.example.com")
     .validate(ClaimsValidation::default().require_audience("my-api"))
-    .key(&public_key_der)      // Static key (mutually exclusive with jwks)
-    .jwks(client)              // JWKS (mutually exclusive with key)
-    .cache(cache)              // Optional: cache JWKS keys
-    .build();
+    .key(Arc::new(public_key_der))  // Wrap in Arc for efficient sharing
+    .jwks(client)                   // JWKS (mutually exclusive with key)
+    .cache(cache);                  // Optional: cache JWKS keys
 
 // Verify tokens (reusable)
 let claims = validator.verify(token_str).await?;
@@ -119,17 +119,21 @@ let custom = validator.verify_with_custom::<MyClaims>(token_str).await?;
 Control which algorithms are accepted:
 
 ```rust
-// RSA algorithms
+use jwtiny::{AlgorithmPolicy, AlgorithmType};
+
+// Predefined policies (zero-allocation, use stack arrays)
 AlgorithmPolicy::rs256_only()  // RS256 only
 AlgorithmPolicy::rs384_only()  // RS384 only
 AlgorithmPolicy::rs512_only()  // RS512 only
 AlgorithmPolicy::rsa_all()     // All RSA algorithms
 
-// ECDSA algorithms
 AlgorithmPolicy::es256_only()  // ES256 (P-256) only
 AlgorithmPolicy::es384_only()  // ES384 (P-384) only
 AlgorithmPolicy::es512_only()  // ES512 (P-521) only
 AlgorithmPolicy::ecdsa_all()   // All ECDSA algorithms
+
+// Custom policies (accepts arrays)
+AlgorithmPolicy::allow_only([AlgorithmType::RS256, AlgorithmType::ES256])
 ```
 
 **Note**: The default policy is `rs256_only()` for security. Always configure the policy explicitly to match your identity provider's signing algorithm.

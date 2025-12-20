@@ -14,7 +14,7 @@ use axum::{
     routing::get,
     Router,
 };
-use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, RemoteCacheKey, TokenValidator};
+use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -34,7 +34,7 @@ async fn main() {
         .init();
 
     let client = reqwest::Client::new();
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
@@ -44,8 +44,7 @@ async fn main() {
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
         .jwks(client)
-        .cache(cache)
-        .build();
+        .cache(cache);
 
     let state = AppState { validator };
 

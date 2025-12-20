@@ -7,6 +7,7 @@ use crate::claims;
 use crate::error::{Error, Result};
 use crate::limits::{MAX_CLAIM_STRING_LENGTH, MAX_CLOCK_SKEW_SECONDS, MAX_MAX_AGE_SECONDS};
 use crate::utils::bounds::apply_clock_skew;
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 // Alias to allow macro-generated code to reference jwtiny::StandardClaims within this crate
@@ -40,7 +41,7 @@ pub struct ClaimsValidation {
     validate_iat: bool,
     clock_skew_seconds: u64,
     max_age_seconds: Option<u64>,
-    required_audience: Option<String>,
+    required_audience: Option<Arc<str>>,
 }
 
 impl Clone for ClaimsValidation {
@@ -51,7 +52,7 @@ impl Clone for ClaimsValidation {
             validate_iat: self.validate_iat,
             clock_skew_seconds: self.clock_skew_seconds,
             max_age_seconds: self.max_age_seconds,
-            required_audience: self.required_audience.clone(),
+            required_audience: self.required_audience.clone(), // Arc::clone is cheap (reference count)
         }
     }
 }
@@ -70,11 +71,6 @@ impl Default for ClaimsValidation {
 }
 
 impl ClaimsValidation {
-    /// Create a new validation config with defaults
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Set clock skew tolerance
     ///
     /// # Security
@@ -99,7 +95,7 @@ impl ClaimsValidation {
 
     /// Require a specific audience
     pub fn require_audience(mut self, audience: impl Into<String>) -> Self {
-        self.required_audience = Some(audience.into());
+        self.required_audience = Some(Arc::from(audience.into()));
         self
     }
 
@@ -253,7 +249,7 @@ pub(crate) fn validate_claims(
     if let Some(required_aud) = &config.required_audience {
         match claims.audience() {
             Some(aud) => {
-                if aud != required_aud.as_str() {
+                if aud != required_aud.as_ref() {
                     return Err(Error::TokenAudienceMismatch {
                         expected: required_aud.to_string(),
                         found: vec![aud.to_string()],

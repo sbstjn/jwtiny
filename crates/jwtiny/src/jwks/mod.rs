@@ -9,8 +9,6 @@ use crate::limits::{MAX_JWK_SET_SIZE, MAX_JWKS_RESPONSE_SIZE};
 use crate::url::validate_jwks_uri;
 use miniserde::Deserialize;
 
-pub use caching::RemoteCacheKey;
-
 /// Fetch data from a URL using reqwest
 pub(crate) async fn fetch_url(client: &reqwest::Client, url: &str) -> Result<Vec<u8>> {
     let response = client

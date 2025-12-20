@@ -14,7 +14,7 @@ mod parity;
 use std::time::Duration;
 
 use base64::Engine;
-use jwtiny::{AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator, claims};
+use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator, claims};
 use moka::future::Cache;
 use parity::token_gen::{Algorithm, TokenBuilder};
 use serde_json::json;
@@ -35,15 +35,14 @@ async fn test_remote_machine() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs512_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -86,15 +85,14 @@ async fn test_remote_machine_with_custom_claims() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs512_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -133,15 +131,14 @@ async fn test_remote_ecdsa_es256() {
         .await
         .expect("Failed to generate ES256 token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::es256_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -165,15 +162,14 @@ async fn test_remote_ecdsa_es384() {
         .await
         .expect("Failed to generate ES384 token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::es384_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -197,15 +193,14 @@ async fn test_remote_ecdsa_es512() {
         .await
         .expect("Failed to generate ES512 token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::es512_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -247,7 +242,7 @@ async fn test_jwks_invalid_json() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
@@ -255,8 +250,7 @@ async fn test_jwks_invalid_json() {
     let client = reqwest::Client::new();
 
     // Configure validator to use mock server for JWKS (token still has real issuer)
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs256_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -310,15 +304,14 @@ async fn test_jwks_missing_keys_array() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs256_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -378,15 +371,14 @@ async fn test_jwks_key_not_found() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs256_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -432,15 +424,14 @@ async fn test_jwks_endpoint_not_found() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
 
     let client = reqwest::Client::new();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs256_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
@@ -496,7 +487,7 @@ async fn test_jwks_network_timeout() {
         .await
         .expect("Failed to generate token");
 
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
@@ -507,8 +498,7 @@ async fn test_jwks_network_timeout() {
         .build()
         .unwrap();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs256_only())
         .issuer(|_| true)
         .validate(ClaimsValidation::default())

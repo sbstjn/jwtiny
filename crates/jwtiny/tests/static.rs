@@ -1,5 +1,6 @@
 use base64::Engine;
 use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator};
+use std::sync::Arc;
 
 #[tokio::test]
 async fn test_synchronous_machine() {
@@ -8,8 +9,7 @@ async fn test_synchronous_machine() {
         .decode(r#"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9vd5T8t5E0dMWF9A9oCW1VIsRaD4htkr+NAfF2gh50OmjaDXNZAL4Pb7uRsWChH6aPB1u0BxcBNrOn9w386hhhRrkWQtyeXjWe+LAEY3iROxmf9uqQDq1OtXXZ8MtjEZttXiviDoa0VEiqjTS3eOh8h4zEirCq/2L3pM5MinHLXy7MGMsQ32ujbYH9Aga/QgXMTm0H4EWyMUbR+8yY8TrzacAEOQPGa1+mxX5GPPNmATVJSudmKCgakCIdcQ6qfGPPDw1GRP7TrOG8piXJD2N+q586jYjOiFONem3Q3x5nbiHFB0+HwnvNHgCGIzOxpNeO7ruDaMIAX9ite2KRRlLwIDAQAB"#)
         .unwrap();
 
-    let mut validator = TokenValidator::new();
-    validator
+    let validator = TokenValidator::new()
         .algorithms(AlgorithmPolicy::rs512_only())
         .validate(
             ClaimsValidation::default()
@@ -17,7 +17,7 @@ async fn test_synchronous_machine() {
                 .no_exp_validation()
                 .no_nbf_validation(),
         )
-        .key(&public_key_der);
+        .key(Arc::new(public_key_der));
 
     let result = validator.verify(token_str).await;
 

@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, RemoteCacheKey, TokenValidator};
+use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use poem::{
     handler,
@@ -99,7 +99,7 @@ async fn main() -> std::io::Result<()> {
         .init();
 
     let client = reqwest::Client::new();
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
@@ -109,8 +109,7 @@ async fn main() -> std::io::Result<()> {
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
         .jwks(client)
-        .cache(cache)
-        .build();
+        .cache(cache);
 
     let state = AppState { validator };
 

@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use jwtiny::{claims, AlgorithmPolicy, ClaimsValidation, RemoteCacheKey, TokenValidator};
+use jwtiny::{claims, AlgorithmPolicy, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use rocket::{
     config::{Config, LogLevel},
@@ -93,7 +93,7 @@ async fn rocket() -> _ {
         .init();
 
     let client = reqwest::Client::new();
-    let cache = Cache::<RemoteCacheKey, Vec<u8>>::builder()
+    let cache = Cache::<String, Vec<u8>>::builder()
         .time_to_live(Duration::from_secs(300))
         .max_capacity(1000)
         .build();
@@ -103,8 +103,7 @@ async fn rocket() -> _ {
         .issuer(|_| true)
         .validate(ClaimsValidation::default())
         .jwks(client)
-        .cache(cache)
-        .build();
+        .cache(cache);
 
     let state = AppState { validator };
 

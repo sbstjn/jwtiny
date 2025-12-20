@@ -6,7 +6,7 @@ use crate::utils::base64url;
 use aws_lc_rs::signature::{self, UnparsedPublicKey};
 
 /// Algorithm identifier from JWT header
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AlgorithmType {
     RS256,
     RS384,
@@ -69,12 +69,12 @@ impl AlgorithmType {
     /// Verify a signature using the algorithm
     ///
     /// # Arguments
-    /// * `signing_input` - The data that was signed (header.payload)
+    /// * `signing_input` - The data that was signed (header.payload) as bytes
     /// * `signature` - The Base64URL-encoded signature
     /// * `key_der` - The DER-encoded public key (SubjectPublicKeyInfo)
     pub(crate) fn verify_signature(
         &self,
-        signing_input: &str,
+        signing_input: &[u8],
         signature: &str,
         key_der: &[u8],
     ) -> Result<()> {
@@ -82,7 +82,7 @@ impl AlgorithmType {
         let public_key = UnparsedPublicKey::new(self.verification_algorithm(), key_der);
 
         public_key
-            .verify(signing_input.as_bytes(), &signature_bytes)
+            .verify(signing_input, &signature_bytes)
             .map_err(|_| Error::SignatureInvalid)
     }
 }
@@ -108,24 +108,24 @@ pub struct AlgorithmPolicy {
 impl AlgorithmPolicy {
     /// Policy that allows only RS256
     pub fn rs256_only() -> Self {
-        Self::allow_only(vec![AlgorithmType::RS256])
+        Self::allow_only([AlgorithmType::RS256])
     }
 
     /// Policy that allows only RS384
     pub fn rs384_only() -> Self {
-        Self::allow_only(vec![AlgorithmType::RS384])
+        Self::allow_only([AlgorithmType::RS384])
     }
 
     /// Policy that allows only RS512
     pub fn rs512_only() -> Self {
-        Self::allow_only(vec![AlgorithmType::RS512])
+        Self::allow_only([AlgorithmType::RS512])
     }
 
     /// Policy that allows all RSA algorithms (RS256, RS384, RS512)
     ///
     /// Equivalent to `Default::default()`.
     pub fn rsa_all() -> Self {
-        Self::allow_only(vec![
+        Self::allow_only([
             AlgorithmType::RS256,
             AlgorithmType::RS384,
             AlgorithmType::RS512,
@@ -134,22 +134,22 @@ impl AlgorithmPolicy {
 
     /// Policy that allows only ES256
     pub fn es256_only() -> Self {
-        Self::allow_only(vec![AlgorithmType::ES256])
+        Self::allow_only([AlgorithmType::ES256])
     }
 
     /// Policy that allows only ES384
     pub fn es384_only() -> Self {
-        Self::allow_only(vec![AlgorithmType::ES384])
+        Self::allow_only([AlgorithmType::ES384])
     }
 
     /// Policy that allows only ES512
     pub fn es512_only() -> Self {
-        Self::allow_only(vec![AlgorithmType::ES512])
+        Self::allow_only([AlgorithmType::ES512])
     }
 
     /// Policy that allows all ECDSA algorithms (ES256, ES384, ES512)
     pub fn ecdsa_all() -> Self {
-        Self::allow_only(vec![
+        Self::allow_only([
             AlgorithmType::ES256,
             AlgorithmType::ES384,
             AlgorithmType::ES512,
@@ -157,9 +157,20 @@ impl AlgorithmPolicy {
     }
 
     /// Create a policy that allows only specific algorithms
-    pub fn allow_only(algorithms: Vec<AlgorithmType>) -> Self {
+    ///
+    /// Accepts an array of algorithms directly for zero-allocation construction.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use jwtiny::{AlgorithmPolicy, AlgorithmType};
+    ///
+    /// let policy = AlgorithmPolicy::allow_only([AlgorithmType::RS256, AlgorithmType::RS384]);
+    /// let single = AlgorithmPolicy::allow_only([AlgorithmType::ES256]);
+    /// ```
+    pub fn allow_only<const N: usize>(algorithms: [AlgorithmType; N]) -> Self {
         Self {
-            allowed: algorithms,
+            allowed: algorithms.into_iter().collect(),
         }
     }
 
@@ -284,8 +295,11 @@ mod tests {
 
         let signature = URL_SAFE_NO_PAD.encode(&signature_bytes);
 
-        let result =
-            AlgorithmType::RS256.verify_signature(signing_input, &signature, &public_key_der);
+        let result = AlgorithmType::RS256.verify_signature(
+            signing_input.as_bytes(),
+            &signature,
+            &public_key_der,
+        );
         assert!(result.is_ok(), "Valid RS256 signature should verify");
     }
 
@@ -318,8 +332,11 @@ mod tests {
         let signature = URL_SAFE_NO_PAD.encode(&signature_bytes);
 
         // Verify with wrong signing input (signature won't match)
-        let result =
-            AlgorithmType::RS256.verify_signature(wrong_signing_input, &signature, &public_key_der);
+        let result = AlgorithmType::RS256.verify_signature(
+            wrong_signing_input.as_bytes(),
+            &signature,
+            &public_key_der,
+        );
         assert!(matches!(result, Err(Error::SignatureInvalid)));
     }
 }

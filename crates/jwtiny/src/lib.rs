@@ -17,7 +17,6 @@ pub use algorithm::{AlgorithmPolicy, AlgorithmType};
 pub use claims::Claims;
 pub use claims::ClaimsValidation;
 pub use error::{Error, Result};
-pub use jwks::RemoteCacheKey;
 pub use validator::TokenValidator;
 
 pub use claims::StandardClaims;

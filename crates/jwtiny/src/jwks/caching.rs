@@ -8,44 +8,22 @@ use crate::utils::bounds::is_valid_cache_key;
 use moka::future::Cache;
 use std::sync::Arc;
 
-/// Cache key for public keys: (issuer, algorithm, kid)
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct RemoteCacheKey {
-    issuer: String,
-    algorithm: String,
-    kid: Option<String>,
-}
-
-impl RemoteCacheKey {
-    pub(crate) fn new(issuer: String, algorithm: String, kid: Option<String>) -> Self {
-        Self {
-            issuer,
-            algorithm,
-            kid,
-        }
-    }
-
-    /// Create a cache key from resolved components
-    fn from_resolved(issuer: &str, algorithm: &AlgorithmType, kid: Option<&str>) -> Self {
-        Self::new(
-            issuer.to_string(),
-            algorithm.to_string(),
-            kid.map(ToString::to_string),
-        )
-    }
-}
-
 /// Resolve a key from an issuer using OIDC discovery and JWKS fetching
 pub(crate) async fn resolve_key_from_issuer(
     client: &reqwest::Client,
     issuer: &str,
     algorithm: &AlgorithmType,
     kid: Option<&str>,
-    cache: Option<Arc<Cache<RemoteCacheKey, Vec<u8>>>>,
+    cache: Option<Arc<Cache<String, Vec<u8>>>>,
 ) -> Result<Vec<u8>> {
     // Build cache key once if caching is enabled and issuer is valid
     let cache_key = if cache.is_some() && is_valid_cache_key(issuer) {
-        Some(RemoteCacheKey::from_resolved(issuer, algorithm, kid))
+        Some(format!(
+            "{}|{}|{}",
+            issuer,
+            algorithm.as_str(),
+            kid.unwrap_or("")
+        ))
     } else {
         None
     };

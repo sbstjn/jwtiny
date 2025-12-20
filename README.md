@@ -92,6 +92,15 @@ let claims = validator.verify_with_custom::<MyClaims>(token).await?;
 
 The macro handles the standard claims (iss, sub, aud, exp, nbf, iat, jti) automatically, so you only need to define your custom fields.
 
+
+## Performance
+
+For ECDSA algorithms, jwtiny is particularly efficient—ES384 performance is over 3x faster than jsonwebtoken, while ES256 shows a solid 8% improvement. RSA performance gains scale with key size: you'll see roughly 18–20% improvements with 2048-bit keys, 26–27% with 3072-bit keys, and around 30–31% with 4096-bit keys, regardless of the hash variant (RS256, RS384, or RS512).
+
+![jwtiny-jsonwebtoken-performance](/performance.png)
+
+These improvements become more pronounced as cryptographic operations become computationally expensive, making jwtiny especially beneficial for high-throughput applications or services handling many concurrent token validations.
+
 ## API Reference
 
 ### TokenValidator

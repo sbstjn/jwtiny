@@ -60,6 +60,15 @@ jsonwebtoken = "9.3"
 async-trait = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+# For ECDSA key generation in benchmarks
+p256 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
+p384 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
+p521 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
+elliptic-curve = { version = "0.13", features = ["pkcs8"] }
+
+[[bench]]
+name = "validation_benchmark"
+harness = false
 
 [lints]
 workspace = true

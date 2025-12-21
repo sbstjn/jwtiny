@@ -66,5 +66,10 @@ p384 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 p521 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 elliptic-curve = { version = "0.13", features = ["pkcs8"] }
 
+[[bench]]
+name = "rsa_validation"
+harness = false
+path = "../../benches/validation/rsa_validation.rs"
+
 [lints]
 workspace = true

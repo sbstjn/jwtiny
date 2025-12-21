@@ -65,6 +65,8 @@ p256 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 p384 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 p521 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 elliptic-curve = { version = "0.13", features = ["pkcs8"] }
+# For Rocket integration benchmarks
+rocket = { version = "0.5", features = ["json"] }
 
 [[bench]]
 name = "rsa_validation"
@@ -80,6 +82,11 @@ path = "../../benches/remote/jwks_validation.rs"
 name = "token_size"
 harness = false
 path = "../../benches/validation/token_size.rs"
+
+[[bench]]
+name = "rocket_integration"
+harness = false
+path = "../../benches/remote/rocket_integration.rs"
 
 [lints]
 workspace = true

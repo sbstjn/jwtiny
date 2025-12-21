@@ -1418,6 +1418,7 @@ dependencies = [
  "p521",
  "rand 0.8.5",
  "reqwest",
+ "rocket",
  "rsa",
  "serde",
  "serde_json",

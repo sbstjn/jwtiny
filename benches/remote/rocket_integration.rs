@@ -1,4 +1,4 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, black_box, criterion_group};
 use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use rocket::{
@@ -7,8 +7,19 @@ use rocket::{
     request::{FromRequest, Outcome, Request},
 };
 use serde_json::json;
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use tokio::sync::oneshot;
+
+#[path = "../report.rs"]
+mod report;
+use report::{calculate_ops_per_sec, create_row, write_report};
+
+static RESULTS: OnceLock<Mutex<Vec<(String, String, u64)>>> = OnceLock::new();
+
+fn get_results() -> &'static Mutex<Vec<(String, String, u64)>> {
+    RESULTS.get_or_init(|| Mutex::new(Vec::new()))
+}
 
 const JWKSERVE_URL: &str = "http://127.0.0.1:3000";
 const ISSUER: &str = "http://127.0.0.1:3000";
@@ -80,7 +91,7 @@ async fn generate_token(algorithm: &str) -> String {
     });
 
     let response = client
-        .post(&format!("{}/sign/{}", JWKSERVE_URL, algorithm))
+        .post(format!("{}/sign/{}", JWKSERVE_URL, algorithm))
         .json(&claims)
         .send()
         .await
@@ -207,19 +218,33 @@ fn benchmark_rocket_integration(
     let url = format!("http://127.0.0.1:{}", ROCKET_PORT);
     let auth_header = format!("Bearer {}", token);
 
-    c.bench_function(&bench_name, |b| {
-        b.iter(|| {
-            rt.block_on(async {
-                let response = client
-                    .get(&url)
-                    .header("authorization", &auth_header)
-                    .send()
-                    .await
-                    .unwrap();
-                black_box(response.status());
-            });
+    let mut group = c.benchmark_group("rocket_integration");
+    group.bench_function(&bench_name, |b| {
+        b.iter_custom(|iters| {
+            let start = std::time::Instant::now();
+            for _ in 0..iters {
+                rt.block_on(async {
+                    let response = client
+                        .get(&url)
+                        .header("authorization", &auth_header)
+                        .send()
+                        .await
+                        .unwrap();
+                    black_box(response.status());
+                });
+            }
+            let elapsed = start.elapsed();
+            let nanos_per_iter = elapsed.as_nanos() as f64 / iters as f64;
+            let ops = calculate_ops_per_sec(nanos_per_iter);
+            get_results().lock().unwrap().push((
+                algorithm_name.to_string(),
+                cache_label.to_string(),
+                ops,
+            ));
+            elapsed
         });
     });
+    group.finish();
 
     // Shutdown server
     let _ = shutdown_tx.send(());
@@ -261,4 +286,25 @@ criterion_group!(
     benchmark_rocket_sha_512_without_cache,
     benchmark_rocket_sha_512_with_cache
 );
-criterion_main!(benches);
+
+fn main() {
+    benches();
+
+    // Export results
+    let results = get_results().lock().unwrap();
+    let header = "library, type, keysize, algorithm, caching, ops";
+    let mut rows = Vec::new();
+
+    for (algorithm, caching, ops) in results.iter() {
+        rows.push(create_row(&[
+            "jwtiny",
+            "rsa",
+            "2048",
+            algorithm,
+            caching,
+            &ops.to_string(),
+        ]));
+    }
+
+    write_report("rocket_integration.txt", header, &rows);
+}

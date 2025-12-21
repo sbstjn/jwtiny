@@ -1,4 +1,4 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, black_box, criterion_group};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use jwtiny::{AlgorithmPolicy, AlgorithmType, ClaimsValidation, TokenValidator};
 use rsa::{
@@ -6,7 +6,17 @@ use rsa::{
     pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey},
 };
 use serde_json::json;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
+
+#[path = "../report.rs"]
+mod report;
+use report::{calculate_ops_per_sec, create_row, write_report};
+
+static RESULTS: OnceLock<Mutex<Vec<(String, String, u64)>>> = OnceLock::new();
+
+fn get_results() -> &'static Mutex<Vec<(String, String, u64)>> {
+    RESULTS.get_or_init(|| Mutex::new(Vec::new()))
+}
 
 fn load_private_key_2048() -> RsaPrivateKey {
     let key_path = concat!(
@@ -33,7 +43,7 @@ fn generate_token_with_size(
     target_token_size: usize,
 ) -> String {
     let encoding_key = EncodingKey::from_rsa_pem(
-        &private_key
+        private_key
             .to_pkcs8_pem(rsa::pkcs8::LineEnding::LF)
             .expect("Failed to encode private key")
             .as_bytes(),
@@ -129,19 +139,7 @@ fn create_validator(algorithm: AlgorithmType, public_key_der: Vec<u8>) -> TokenV
 
 /// Percentage size multipliers to test
 const SIZE_MULTIPLIERS: &[f64] = &[
-    0.0,    // default
-    20.0,   // +20%
-    40.0,   // +40%
-    60.0,   // +60%
-    80.0,   // +80%
-    100.0,  // +100%
-    200.0,  // +200%
-    300.0,  // +300%
-    400.0,  // +400%
-    500.0,  // +500%
-    1000.0, // +1000%
-    1500.0, // +1500%
-    2000.0, // +2000%
+    0.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 1500.0, 2000.0, 2500.0, 5000.0, 10000.0,
 ];
 
 /// Format size label for benchmark name
@@ -185,11 +183,25 @@ fn benchmark_algorithm_size(
     );
 
     let rt = tokio::runtime::Runtime::new().unwrap();
-    c.bench_function(&bench_name, |b| {
-        b.iter(|| {
-            rt.block_on(validator.verify(black_box(&token))).unwrap();
+    let mut group = c.benchmark_group("token_size");
+    group.bench_function(&bench_name, |b| {
+        b.iter_custom(|iters| {
+            let start = std::time::Instant::now();
+            for _ in 0..iters {
+                rt.block_on(validator.verify(black_box(&token))).unwrap();
+            }
+            let elapsed = start.elapsed();
+            let nanos_per_iter = elapsed.as_nanos() as f64 / iters as f64;
+            let ops = calculate_ops_per_sec(nanos_per_iter);
+            let size_label = format_size_label(size_multiplier);
+            get_results()
+                .lock()
+                .unwrap()
+                .push((algorithm_name.to_string(), size_label, ops));
+            elapsed
         });
     });
+    group.finish();
 }
 
 /// Generate all benchmarks for a specific algorithm
@@ -206,4 +218,25 @@ fn benches(c: &mut Criterion) {
 }
 
 criterion_group!(benches_group, benches);
-criterion_main!(benches_group);
+
+fn main() {
+    benches_group();
+
+    // Export results
+    let results = get_results().lock().unwrap();
+    let header = "library, type, keysize, algorithm, tokensize, ops";
+    let mut rows = Vec::new();
+
+    for (algorithm, tokensize, ops) in results.iter() {
+        rows.push(create_row(&[
+            "jwtiny",
+            "rsa",
+            "2048",
+            algorithm,
+            tokensize,
+            &ops.to_string(),
+        ]));
+    }
+
+    write_report("token_size.txt", header, &rows);
+}

@@ -4,3 +4,4 @@
 .cursor
 cobertura.xml
 .DS_Store
+/reports

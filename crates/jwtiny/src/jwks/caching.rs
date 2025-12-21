@@ -18,7 +18,7 @@ pub(crate) async fn resolve_key_from_issuer(
 ) -> Result<Vec<u8>> {
     // Build cache key and validate final length to prevent DoS attacks
     // Format: "issuer|algorithm|kid"
-    let cache_key = if let Some(_) = cache {
+    let cache_key = if cache.is_some() {
         let kid_str = kid.unwrap_or("");
         let key = format!("{}|{}|{}", issuer, algorithm.as_str(), kid_str);
         if is_valid_cache_key(&key) {

@@ -103,6 +103,12 @@ The **RSA** performance gains scale with key size: you'll see roughly 18–20% i
 
 These improvements become more pronounced as cryptographic operations become computationally expensive, making jwtiny especially beneficial for high-throughput applications or services handling many concurrent token validations.
 
+![jwtiny-jsonwebtoken-performance-token-size](/performance_size.png)
+
+The throughput of **RS256** degrades ~35% from default token size (60,203 ops/s at 550 bytes) to +1000% (39,173 ops/s at 7,830 bytes), while **ES384** stays stable with only ~16% degradation (5,696 to 4,807 ops/s) despite a 14x token size increase. 
+
+At +1000%, jwtiny’s **RS256** advantage narrows to ~5%, while **ES384** maintains its ~3x advantage, indicating ES384’s validation is less sensitive to payload size than RS256.
+
 ## API Reference
 
 ### TokenValidator

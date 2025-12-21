@@ -99,11 +99,11 @@ For **ECDSA** algorithms, `jwtiny` is particularly efficient — **ES384** perfo
 
 The **RSA** performance gains scale with key size: you'll see roughly 18–20% improvements with 2048-bit keys, 26–27% with 3072-bit keys, and around 30–31% with 4096-bit keys, regardless of the hash variant.
 
-![jwtiny-jsonwebtoken-performance](./docs/performance.png)
+![jwtiny-jsonwebtoken-performance](https://raw.githubusercontent.com/sbstjn/jwtiny/refs/heads/main/docs/performance.png)
 
 These improvements become more pronounced as cryptographic operations become computationally expensive, making jwtiny especially beneficial for high-throughput applications or services handling many concurrent token validations.
 
-![jwtiny-jsonwebtoken-performance-token-size](./docs/performance_size.png)
+![jwtiny-jsonwebtoken-performance-token-size](https://raw.githubusercontent.com/sbstjn/jwtiny/refs/heads/main/docs/performance_size.png)
 
 The throughput of **RS256** degrades ~35% from default token (60,203 ops/s at 550 bytes) to +1000% token size (39,173 ops/s at 7,830 bytes), while **ES384** stays stable with only ~16% degradation (5,696 to 4,807 ops/s) despite a 14x token size increase. 
 

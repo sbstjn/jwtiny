@@ -16,14 +16,16 @@ pub(crate) async fn resolve_key_from_issuer(
     kid: Option<&str>,
     cache: Option<Arc<Cache<String, Vec<u8>>>>,
 ) -> Result<Vec<u8>> {
-    // Build cache key once if caching is enabled and issuer is valid
-    let cache_key = if cache.is_some() && is_valid_cache_key(issuer) {
-        Some(format!(
-            "{}|{}|{}",
-            issuer,
-            algorithm.as_str(),
-            kid.unwrap_or("")
-        ))
+    // Build cache key and validate final length to prevent DoS attacks
+    // Format: "issuer|algorithm|kid"
+    let cache_key = if let Some(_) = cache {
+        let kid_str = kid.unwrap_or("");
+        let key = format!("{}|{}|{}", issuer, algorithm.as_str(), kid_str);
+        if is_valid_cache_key(&key) {
+            Some(key)
+        } else {
+            None
+        }
     } else {
         None
     };

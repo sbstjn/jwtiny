@@ -5,7 +5,7 @@ pub(crate) mod jwk;
 /// Cache key type for storing resolved keys in moka caches
 use crate::error::{Error, Result};
 use crate::jwks::jwk::Jwk;
-use crate::limits::{MAX_JWK_SET_SIZE, MAX_JWKS_RESPONSE_SIZE};
+use crate::limits::MAX_JWKS_RESPONSE_SIZE;
 use crate::url::validate_jwks_uri;
 use miniserde::Deserialize;
 
@@ -60,14 +60,6 @@ pub(crate) async fn fetch_jwks(client: &reqwest::Client, jwks_uri: &str) -> Resu
 
     let set: JwkSet = miniserde::json::from_str(body)
         .map_err(|_| Error::RemoteError("jwks: invalid jwks json".to_string()))?;
-
-    // Validate key set size to prevent DoS attacks
-    if set.keys.len() > MAX_JWK_SET_SIZE {
-        return Err(Error::RemoteJwkSetTooLarge {
-            key_count: set.keys.len(),
-            max: MAX_JWK_SET_SIZE,
-        });
-    }
 
     Ok(set)
 }
@@ -209,34 +201,6 @@ mod tests {
         assert!(matches!(
             result,
             Err(Error::RemoteResponseTooLarge { size, max }) if size > max && max == MAX_JWKS_RESPONSE_SIZE
-        ));
-    }
-
-    #[tokio::test]
-    async fn test_fetch_jwks_oversized_set() {
-        use crate::limits::MAX_JWK_SET_SIZE;
-
-        let mut server = mockito::Server::new_async().await;
-        let mut keys = Vec::new();
-        for i in 0..=MAX_JWK_SET_SIZE {
-            keys.push(format!(
-                r#"{{"kty":"RSA","kid":"k{i}","n":"abc","e":"AQAB"}}"#
-            ));
-        }
-        let jwks_json = format!(r#"{{"keys": [{}]}}"#, keys.join(","));
-        let _mock = server
-            .mock("GET", "/jwks.json")
-            .with_status(200)
-            .with_body(jwks_json)
-            .create();
-
-        let client = reqwest::Client::new();
-        let uri = format!("{}/jwks.json", server.url());
-
-        let result = fetch_jwks(&client, &uri).await;
-        assert!(matches!(
-            result,
-            Err(Error::RemoteJwkSetTooLarge { key_count, max }) if key_count > max && max == MAX_JWK_SET_SIZE
         ));
     }
 

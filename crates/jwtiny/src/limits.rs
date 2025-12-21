@@ -15,9 +15,6 @@ pub(crate) const MAX_DISCOVERY_RESPONSE_SIZE: usize = 64 * 1024;
 /// Maximum size for JWKS response (512KB)
 pub(crate) const MAX_JWKS_RESPONSE_SIZE: usize = 512 * 1024;
 
-/// Maximum number of keys in a JWK set (100 keys)
-pub(crate) const MAX_JWK_SET_SIZE: usize = 100;
-
 /// Maximum size for decoded JWT header JSON (8KB)
 /// Headers are typically small (< 1KB), but we allow reasonable margin
 pub(crate) const MAX_DECODED_HEADER_SIZE: usize = 8 * 1024;
@@ -87,3 +84,6 @@ pub(crate) const MAX_CLOCK_SKEW_SECONDS: u64 = 5;
 
 /// Maximum token age (1 day = 86,400 seconds)
 pub(crate) const MAX_MAX_AGE_SECONDS: u64 = 60 * 60 * 24;
+
+/// Maximum length for cache keys (3KB)
+pub(crate) const MAX_CACHE_KEY_LENGTH: usize = 3 * 1024;

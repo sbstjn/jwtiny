@@ -4,7 +4,7 @@
 //! including timestamp bounds, field size limits, and cache key validation.
 
 use crate::error::{Error, Result};
-use crate::limits::{MAX_ISSUER_URL_LENGTH, MAX_JWKS_URI_LENGTH, MAX_TIMESTAMP, MIN_TIMESTAMP};
+use crate::limits::{MAX_CACHE_KEY_LENGTH, MAX_TIMESTAMP, MIN_TIMESTAMP};
 
 /// Check if timestamp is within acceptable bounds
 pub(crate) fn validate_timestamp_bounds(value: i64) -> Result<()> {
@@ -43,6 +43,5 @@ pub(crate) fn validate_field_size(field: &str, value: &str, max: usize) -> Resul
 
 /// Check if cache key length is valid to prevent DoS attacks
 pub(crate) fn is_valid_cache_key(key: &str) -> bool {
-    let max_key_length = MAX_ISSUER_URL_LENGTH.max(MAX_JWKS_URI_LENGTH);
-    key.len() <= max_key_length
+    key.len() <= MAX_CACHE_KEY_LENGTH
 }

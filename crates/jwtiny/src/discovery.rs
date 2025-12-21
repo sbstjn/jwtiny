@@ -21,7 +21,6 @@ pub(crate) struct OidcDiscovery {
 
 /// Build the URL to the discovery document from an issuer string
 fn build_well_known_url(issuer: &str) -> Result<String> {
-    // Basic normalization: trim trailing '/'
     let base = issuer.trim_end_matches('/');
 
     if base.is_empty() {
@@ -62,15 +61,7 @@ pub(crate) async fn discover_jwks_uri(issuer: &str, client: &reqwest::Client) ->
         ));
     }
 
-    // Validate JWKS URI length to prevent DoS
-    if doc.jwks_uri.len() > MAX_JWKS_URI_LENGTH {
-        return Err(Error::RemoteUrlTooLong {
-            length: doc.jwks_uri.len(),
-            max: MAX_JWKS_URI_LENGTH,
-        });
-    }
-
-    // Validate JWKS URI format to prevent SSRF
+    // Check if JWKS URI is valid and within bounds
     validate_jwks_uri(&doc.jwks_uri)?;
 
     Ok(doc.jwks_uri)

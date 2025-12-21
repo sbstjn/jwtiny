@@ -72,29 +72,19 @@ impl Default for ClaimsValidation {
 }
 
 impl ClaimsValidation {
-    /// Set clock skew tolerance
-    ///
-    /// # Security
-    /// Clock skew is limited to prevent effectively disabling expiration checks.
-    /// Maximum allowed value is 300 seconds (5 minutes).
-    /// Values exceeding the limit will be rejected during validation.
+    /// Set clock skew tolerance in seconds
     pub fn clock_skew(mut self, seconds: u64) -> Self {
         self.clock_skew_seconds = seconds;
         self
     }
 
-    /// Set maximum token age
-    ///
-    /// # Security
-    /// Max age is limited to prevent effectively disabling age checks.
-    /// Maximum allowed value is 31,536,000 seconds (1 year).
-    /// Values exceeding the limit will be rejected during validation.
+    /// Set maximum token age in seconds
     pub fn max_age(mut self, seconds: u64) -> Self {
         self.max_age_seconds = Some(seconds);
         self
     }
 
-    /// Require a specific audience
+    /// Require a specific audience string
     pub fn require_audience(mut self, audience: impl Into<String>) -> Self {
         self.required_audience = Some(Arc::from(audience.into()));
         self
@@ -157,13 +147,15 @@ pub(crate) fn validate_claims(
     claims: &impl StandardClaims,
     config: &ClaimsValidation,
 ) -> Result<()> {
-    // Validate configuration bounds to prevent security bypass
+    // Check if configured clock skew is within bounds
     if config.clock_skew_seconds > MAX_CLOCK_SKEW_SECONDS {
         return Err(Error::ClockSkewTooLarge {
             value: config.clock_skew_seconds,
             max: MAX_CLOCK_SKEW_SECONDS,
         });
     }
+
+    // Check if configured max age is within bounds
     if let Some(max_age) = config.max_age_seconds {
         if max_age > MAX_MAX_AGE_SECONDS {
             return Err(Error::MaxAgeTooLarge {
@@ -175,20 +167,22 @@ pub(crate) fn validate_claims(
 
     let now = current_timestamp();
 
-    // Validate timestamp bounds
+    // Check if expiration is within bounds
     if let Some(exp) = claims.expiration() {
         crate::utils::bounds::validate_timestamp_bounds(exp)?;
     }
 
+    // Check if not-before is within bounds
     if let Some(nbf) = claims.not_before() {
         crate::utils::bounds::validate_timestamp_bounds(nbf)?;
     }
 
+    // Check if issued-at is within bounds
     if let Some(iat) = claims.issued_at() {
         crate::utils::bounds::validate_timestamp_bounds(iat)?;
     }
 
-    // Validate expiration with checked arithmetic
+    // Check if token is already expired
     if config.validate_exp {
         if let Some(exp) = claims.expiration() {
             let exp_with_skew = apply_clock_skew(exp, config.clock_skew_seconds, true)?;
@@ -202,7 +196,7 @@ pub(crate) fn validate_claims(
         }
     }
 
-    // Validate not-before with checked arithmetic
+    // Check if token is not yet valid
     if config.validate_nbf {
         if let Some(nbf) = claims.not_before() {
             let nbf_with_skew = apply_clock_skew(nbf, config.clock_skew_seconds, false)?;
@@ -216,10 +210,10 @@ pub(crate) fn validate_claims(
         }
     }
 
-    // Validate issued-at with checked arithmetic
+    // Check if issued-at is within bounds
     if config.validate_iat {
         if let Some(iat) = claims.issued_at() {
-            // Check if issued in the future
+            // Check if token was issued in the future
             let now_with_skew = apply_clock_skew(now, config.clock_skew_seconds, true)?;
             if iat > now_with_skew {
                 return Err(Error::TokenIssuedInFuture {
@@ -229,7 +223,7 @@ pub(crate) fn validate_claims(
                 });
             }
 
-            // Check max age with checked arithmetic
+            // Check if token was issued too long ago
             if let Some(max_age) = config.max_age_seconds {
                 let max_age_i64 = max_age as i64;
                 let iat_plus_max_age = iat
@@ -246,7 +240,7 @@ pub(crate) fn validate_claims(
         }
     }
 
-    // Validate audience
+    // Check if audience is required and matches
     if let Some(required_aud) = &config.required_audience {
         match claims.audience() {
             Some(aud) => {

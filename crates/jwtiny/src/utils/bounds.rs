@@ -6,7 +6,7 @@
 use crate::error::{Error, Result};
 use crate::limits::{MAX_ISSUER_URL_LENGTH, MAX_JWKS_URI_LENGTH, MAX_TIMESTAMP, MIN_TIMESTAMP};
 
-/// Validate timestamp is within acceptable bounds
+/// Check if timestamp is within acceptable bounds
 pub(crate) fn validate_timestamp_bounds(value: i64) -> Result<()> {
     if !(MIN_TIMESTAMP..=MAX_TIMESTAMP).contains(&value) {
         return Err(Error::TimestampOutOfBounds {
@@ -19,14 +19,6 @@ pub(crate) fn validate_timestamp_bounds(value: i64) -> Result<()> {
 }
 
 /// Apply clock skew to a timestamp with overflow protection
-///
-/// # Arguments
-/// * `timestamp` - The base timestamp
-/// * `skew_seconds` - Clock skew in seconds
-/// * `add` - If true, add skew; if false, subtract skew
-///
-/// # Returns
-/// Adjusted timestamp or error on overflow
 pub(crate) fn apply_clock_skew(timestamp: i64, skew_seconds: u64, add: bool) -> Result<i64> {
     let skew_i64 = skew_seconds as i64;
     if add {

@@ -18,10 +18,6 @@ pub(crate) const MAX_JWKS_RESPONSE_SIZE: usize = 512 * 1024;
 /// Maximum number of keys in a JWK set (100 keys)
 pub(crate) const MAX_JWK_SET_SIZE: usize = 100;
 
-// ============================================================================
-// Decoded payload size limits (P0 - Critical)
-// ============================================================================
-
 /// Maximum size for decoded JWT header JSON (8KB)
 /// Headers are typically small (< 1KB), but we allow reasonable margin
 pub(crate) const MAX_DECODED_HEADER_SIZE: usize = 8 * 1024;
@@ -71,28 +67,12 @@ pub(crate) const MAX_JWK_X_SIZE: usize = 128;
 /// P-521 has 66-byte coordinates, encoding to ~88 bytes Base64URL
 pub(crate) const MAX_JWK_Y_SIZE: usize = 128;
 
-// ============================================================================
-// Claim string length limits (P0 - Critical)
-// ============================================================================
-
-/// Maximum length for claim string values (2048 bytes)
-/// Applies to iss, sub, aud, jti claims
-pub(crate) const MAX_CLAIM_STRING_LENGTH: usize = 2048;
-
-// ============================================================================
-// Timestamp bounds (P0 - Critical)
-// ============================================================================
-
 /// Minimum valid Unix timestamp (1970-01-01 00:00:00 UTC)
 pub(crate) const MIN_TIMESTAMP: i64 = 0;
 
 /// Maximum valid Unix timestamp (2100-01-01 00:00:00 UTC)
 /// 4102444800 seconds since Unix epoch
 pub(crate) const MAX_TIMESTAMP: i64 = 4_102_444_800;
-
-// ============================================================================
-// Header field size limits (P1 - High Priority)
-// ============================================================================
 
 /// Maximum length for algorithm (alg) field in JWT header (16 bytes)
 /// Algorithm names are short (e.g., "RS256", "RS384", "RS512")
@@ -102,18 +82,8 @@ pub(crate) const MAX_ALG_LENGTH: usize = 16;
 /// Key IDs are typically short identifiers, but must be bounded
 pub(crate) const MAX_KID_LENGTH: usize = 256;
 
-// ============================================================================
-// Validation bounds (P1 - High Priority)
-// ============================================================================
+/// Maximum clock skew tolerance (5 seconds)
+pub(crate) const MAX_CLOCK_SKEW_SECONDS: u64 = 5;
 
-/// Maximum clock skew tolerance (300 seconds = 5 minutes)
-/// Prevents clock skew from effectively disabling expiration checks
-pub(crate) const MAX_CLOCK_SKEW_SECONDS: u64 = 300;
-
-/// Maximum token age (1 year = 31,536,000 seconds)
-/// Prevents max_age from effectively disabling age checks
-pub(crate) const MAX_MAX_AGE_SECONDS: u64 = 86400 * 365;
-
-// ============================================================================
-// JSON parsing limits (P2 - Medium Priority)
-// ============================================================================
+/// Maximum token age (1 day = 86,400 seconds)
+pub(crate) const MAX_MAX_AGE_SECONDS: u64 = 60 * 60 * 24;

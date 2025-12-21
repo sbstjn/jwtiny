@@ -7,17 +7,6 @@ use crate::error::{Error, Result};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 
 /// Decode Base64URL string to bytes with maximum size limit
-///
-/// # Arguments
-/// * `input` - Base64URL-encoded string to decode
-/// * `max_size` - Maximum size for decoded output (in bytes)
-///
-/// # Returns
-/// Decoded bytes, or error if size limit exceeded
-///
-/// # Security
-/// Validates decoded size after decoding to prevent memory exhaustion.
-/// All call sites must provide appropriate limits based on context.
 pub(crate) fn decode_bytes(input: &str, max_size: usize) -> Result<Vec<u8>> {
     let result = URL_SAFE_NO_PAD
         .decode(input)
@@ -36,10 +25,6 @@ pub(crate) fn decode_bytes(input: &str, max_size: usize) -> Result<Vec<u8>> {
 }
 
 /// Decode Base64URL string to UTF-8 string with size limit
-///
-/// # Arguments
-/// * `input` - Base64URL-encoded string to decode
-/// * `max_size` - Maximum size for decoded output (in bytes)
 pub(crate) fn decode_string(input: &str, max_size: usize) -> Result<String> {
     decode_bytes(input, max_size).and_then(|bytes| {
         String::from_utf8(bytes)

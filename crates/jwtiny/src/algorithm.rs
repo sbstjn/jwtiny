@@ -24,7 +24,7 @@ pub enum AlgorithmType {
 
 impl AlgorithmType {
     pub(crate) fn from_str(s: &str) -> Result<Self> {
-        // Validate algorithm string length before parsing to prevent DoS
+        // Validate algorithm string length before parsing
         if s.len() > MAX_ALG_LENGTH {
             return Err(Error::AlgorithmUnsupported(format!(
                 "Algorithm string too long: {} bytes (maximum: {} bytes)",
@@ -33,6 +33,7 @@ impl AlgorithmType {
             )));
         }
 
+        // https://datatracker.ietf.org/doc/html/rfc8725#section-3
         match s {
             "none" => Err(Error::AlgorithmNoneRejected),
             "RS256" => Ok(AlgorithmType::RS256),
@@ -45,7 +46,7 @@ impl AlgorithmType {
         }
     }
 
-    /// Convert to string representation
+    /// Convert AlgorithmType to string representation
     pub const fn as_str(&self) -> &'static str {
         match self {
             AlgorithmType::RS256 => "RS256",
@@ -59,7 +60,7 @@ impl AlgorithmType {
 
     /// Get the verification algorithm for signature verification
     ///
-    /// Note: JWT ECDSA signatures use IEEE P1363 format (fixed-length R||S),
+    /// JWT ECDSA signatures use IEEE P1363 format (fixed-length R||S)
     /// not ASN.1 DER encoding, as per RFC 7518 Section 3.4.
     fn verification_algorithm(&self) -> &'static dyn signature::VerificationAlgorithm {
         match self {
@@ -170,7 +171,6 @@ impl AlgorithmPolicy {
     /// use jwtiny::{AlgorithmPolicy, AlgorithmType};
     ///
     /// let policy = AlgorithmPolicy::allow_only([AlgorithmType::RS256, AlgorithmType::RS384]);
-    /// let single = AlgorithmPolicy::allow_only([AlgorithmType::ES256]);
     /// ```
     pub fn allow_only<const N: usize>(algorithms: [AlgorithmType; N]) -> Self {
         Self {

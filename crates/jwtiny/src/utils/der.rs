@@ -13,12 +13,6 @@ fn jwks_error(operation: &str, details: impl std::fmt::Display) -> Error {
 }
 
 /// RSA public key structure for DER encoding
-///
-/// Represents RSAPublicKey as defined in RFC 3447:
-/// RSAPublicKey ::= SEQUENCE {
-///     modulus           INTEGER,  -- n
-///     publicExponent    INTEGER   -- e
-/// }
 #[derive(Sequence)]
 struct RsaPublicKey<'a> {
     /// RSA modulus (n)
@@ -36,10 +30,6 @@ pub(crate) fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
     }
 
     // Validate RSA key size before encoding
-    // For JWT/JWKS, practical RSA keys are 2048-4096 bits (256-512 bytes modulus)
-    // Even 8192-bit keys (1024 bytes) would encode to ~2050 bytes SEQUENCE, well within limits
-    // Enforce a reasonable maximum: 8192 bytes modulus (65536 bits) - way beyond practical use
-    const MAX_RSA_MODULUS_SIZE: usize = 8192;
     if n.len() > MAX_RSA_MODULUS_SIZE {
         return Err(jwks_error(
             "RSA modulus too large",
@@ -52,7 +42,6 @@ pub(crate) fn rsa_spki_from_n_e(n: &[u8], e: &[u8]) -> Result<Vec<u8>> {
     }
 
     // Create UintRef for modulus and exponent
-    // UintRef handles INTEGER encoding including leading zero for positive values
     let n_uint = UintRef::new(n).map_err(|e| jwks_error("failed to encode RSA modulus", e))?;
     let e_uint = UintRef::new(e).map_err(|e| jwks_error("failed to encode RSA exponent", e))?;
 
@@ -116,9 +105,6 @@ impl EcdsaCurve {
 }
 
 /// Build DER-encoded ECDSA public key from x and y coordinates
-///
-/// Creates an uncompressed point format (0x04 || x || y) and wraps it
-/// in SubjectPublicKeyInfo with the appropriate curve parameters.
 pub(crate) fn ecdsa_spki_from_xy(x: &[u8], y: &[u8], curve: EcdsaCurve) -> Result<Vec<u8>> {
     use der::asn1::BitString;
 

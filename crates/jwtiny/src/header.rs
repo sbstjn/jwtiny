@@ -4,9 +4,7 @@ use crate::limits::MAX_ALG_LENGTH;
 use crate::utils::bounds::validate_field_size;
 use miniserde::Deserialize;
 
-/// JWT header structure
-///
-/// Represents the JWT header containing algorithm and key ID.
+/// JWT header containing algorithm and key ID
 #[derive(Debug, Clone)]
 pub(crate) struct TokenHeader {
     /// Algorithm used for signing

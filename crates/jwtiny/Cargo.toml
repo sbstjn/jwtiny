@@ -71,5 +71,10 @@ name = "rsa_validation"
 harness = false
 path = "../../benches/validation/rsa_validation.rs"
 
+[[bench]]
+name = "jwks_validation"
+harness = false
+path = "../../benches/remote/jwks_validation.rs"
+
 [lints]
 workspace = true

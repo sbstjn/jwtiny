@@ -96,19 +96,19 @@ path = "../../benches/remote/rocket_integration.rs"
 
 [[example]]
 name = "axum"
-path = "examples/axum.rs"
+path = "../../examples/axum.rs"
 
 [[example]]
 name = "poem"
-path = "examples/poem.rs"
+path = "../../examples/poem.rs"
 
 [[example]]
 name = "rocket"
-path = "examples/rocket.rs"
+path = "../../examples/rocket.rs"
 
 [[example]]
 name = "warp"
-path = "examples/warp.rs"
+path = "../../examples/warp.rs"
 
 [lints]
 workspace = true

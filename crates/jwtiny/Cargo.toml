@@ -66,9 +66,5 @@ p384 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 p521 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 elliptic-curve = { version = "0.13", features = ["pkcs8"] }
 
-[[bench]]
-name = "validation_benchmark"
-harness = false
-
 [lints]
 workspace = true

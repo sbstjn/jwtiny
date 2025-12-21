@@ -16,23 +16,6 @@ use syn::{DeriveInput, parse_macro_input};
 /// - `not_before` (nbf) - time before which the JWT must not be accepted
 /// - `issued_at` (iat) - time at which the JWT was issued
 /// - `jwt_id` (jti) - unique identifier for the JWT
-///
-/// # Example
-///
-/// ```rust
-/// use jwtiny::claims;
-///
-/// /// Standard JWT claims
-/// #[claims]
-/// pub struct CustomClaims {
-///     #[serde(rename = "email")]
-///     pub email: Option<String>,
-///     #[serde(rename = "role")]
-///     pub role: Option<String>,
-///     #[serde(rename = "permission_list")]
-///     pub permissions: Option<Vec<String>>,
-/// }
-/// ```
 #[proc_macro_attribute]
 pub fn claims(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

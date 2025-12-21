@@ -1,18 +1,18 @@
 //! Run with
 //!
 //! ```not_rust
-//! cargo run -p jwtiny-example-axum
+//! cargo run --example axum
 //! ```
 
 use std::time::Duration;
 
 use axum::{
+    Router,
     extract::{Request, State},
-    http::{header::AUTHORIZATION, StatusCode},
+    http::{StatusCode, header::AUTHORIZATION},
     middleware::Next,
     response::Response,
     routing::get,
-    Router,
 };
 use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, TokenValidator};
 use moka::future::Cache;

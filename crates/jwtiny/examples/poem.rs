@@ -1,7 +1,7 @@
 //! Run with
 //!
 //! ```not_rust
-//! cargo run -p jwtiny-example-poem
+//! cargo run --example poem
 //! ```
 
 use std::time::Duration;
@@ -9,10 +9,9 @@ use std::time::Duration;
 use jwtiny::{AlgorithmPolicy, Claims, ClaimsValidation, TokenValidator};
 use moka::future::Cache;
 use poem::{
-    handler,
-    http::{header::AUTHORIZATION, StatusCode},
+    Endpoint, EndpointExt, Error, IntoResponse, Request, Response, Result, Route, Server, handler,
+    http::{StatusCode, header::AUTHORIZATION},
     listener::TcpListener,
-    Endpoint, EndpointExt, Error, IntoResponse, Request, Response, Result, Route, Server,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

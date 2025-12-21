@@ -65,8 +65,14 @@ p256 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 p384 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 p521 = { version = "0.13", features = ["ecdsa", "pkcs8"] }
 elliptic-curve = { version = "0.13", features = ["pkcs8"] }
-# For Rocket integration benchmarks
+# For Rocket integration benchmarks and examples
 rocket = { version = "0.5", features = ["json"] }
+# For framework examples
+axum = "0.8.7"
+poem = "2.0"
+warp = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 [[bench]]
 name = "rsa_validation"
@@ -87,6 +93,22 @@ path = "../../benches/validation/token_size.rs"
 name = "rocket_integration"
 harness = false
 path = "../../benches/remote/rocket_integration.rs"
+
+[[example]]
+name = "axum"
+path = "examples/axum.rs"
+
+[[example]]
+name = "poem"
+path = "examples/poem.rs"
+
+[[example]]
+name = "rocket"
+path = "examples/rocket.rs"
+
+[[example]]
+name = "warp"
+path = "examples/warp.rs"
 
 [lints]
 workspace = true

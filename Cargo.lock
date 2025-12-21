@@ -1404,6 +1404,7 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "aws-lc-rs",
+ "axum",
  "base64 0.22.1",
  "criterion",
  "der",
@@ -1416,6 +1417,7 @@ dependencies = [
  "p256",
  "p384",
  "p521",
+ "poem",
  "rand 0.8.5",
  "reqwest",
  "rocket",
@@ -1425,7 +1427,10 @@ dependencies = [
  "spki",
  "thiserror 2.0.17",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "url",
+ "warp",
 ]
 
 [[package]]
@@ -1435,59 +1440,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "jwtiny-example-axum"
-version = "0.0.0"
-dependencies = [
- "axum",
- "jwtiny",
- "moka",
- "reqwest",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "jwtiny-example-poem"
-version = "0.0.0"
-dependencies = [
- "jwtiny",
- "moka",
- "poem",
- "reqwest",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "jwtiny-example-rocket"
-version = "0.0.0"
-dependencies = [
- "jwtiny",
- "miniserde",
- "moka",
- "reqwest",
- "rocket",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "jwtiny-example-warp"
-version = "0.0.0"
-dependencies = [
- "jwtiny",
- "moka",
- "reqwest",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "warp",
 ]
 
 [[package]]

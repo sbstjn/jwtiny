@@ -1,12 +1,12 @@
 //! Run with
 //!
 //! ```not_rust
-//! cargo run -p jwtiny-example-rocket
+//! cargo run --example rocket
 //! ```
 
 use std::time::Duration;
 
-use jwtiny::{claims, AlgorithmPolicy, ClaimsValidation, TokenValidator};
+use jwtiny::{AlgorithmPolicy, ClaimsValidation, TokenValidator, claims};
 use moka::future::Cache;
 use rocket::{
     config::{Config, LogLevel},

@@ -1,7 +1,7 @@
 //! Run with
 //!
 //! ```not_rust
-//! cargo run -p jwtiny-example-warp
+//! cargo run --example warp
 //! ```
 
 use std::{convert::Infallible, time::Duration};

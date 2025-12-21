@@ -1,8 +1,6 @@
 /target
-/docs
 /bundle-sizes
 
-.claude
 .cursor
 cobertura.xml
 .DS_Store

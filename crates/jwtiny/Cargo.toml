@@ -76,5 +76,10 @@ name = "jwks_validation"
 harness = false
 path = "../../benches/remote/jwks_validation.rs"
 
+[[bench]]
+name = "token_size"
+harness = false
+path = "../../benches/validation/token_size.rs"
+
 [lints]
 workspace = true

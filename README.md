@@ -188,16 +188,41 @@ match validator.verify(token).await {
 
 Complete working examples for various web frameworks:
 
-- **Axum**: [`examples/axum/`](examples/axum/)
-- **Poem**: [`examples/poem/`](examples/poem/)
-- **Rocket**: [`examples/rocket/`](examples/rocket/)
-- **Warp**: [`examples/warp/`](examples/warp/)
+- **Axum**: [`examples/axum.rs`](examples/axum.rs)
+- **Poem**: [`examples/poem.rs`](examples/poem.rs)
+- **Rocket**: [`examples/rocket.rs`](examples/rocket.rs)
+- **Warp**: [`examples/warp.rs`](examples/warp.rs)
 
 Run an example:
 
 ```bash
-cargo run -p jwtiny-example-axum
+# Run example: axum, poem, rocket, or warp
+$ > cargo run --example axum
 ```
+
+## Benchmarks
+
+Naive performance benchmarks are available to measure validation throughput and latency:
+
+- **[RSA Validation](benches/validation/rsa_validation.rs)** — Signature validation performance for RSA 2048 keys with SHA-256, SHA-384, and SHA-512 algorithms
+- **[Token Size](benches/validation/token_size.rs)** — Validation performance across varying JWT payload sizes (baseline to +2000%)
+- **[JWKS Validation](benches/remote/jwks_validation.rs)** — Remote JWKS endpoint validation with and without caching for SHA-256, SHA-384, and SHA-512
+- **[Rocket Integration](benches/remote/rocket_integration.rs)** — End-to-end validation performance through Rocket middleware with and without caching
+
+Run benchmarks:
+
+```bash
+# Run all benchmarks
+$ > cargo bench
+
+# Run a specific benchmark
+$ > cargo bench --bench rsa_validation
+$ > cargo bench --bench token_size
+$ > cargo bench --bench jwks_validation
+$ > cargo bench --bench rocket_integration
+```
+
+Benchmark results are exported to `./reports/` as plain text files for analysis and charting.
 
 ## License
 

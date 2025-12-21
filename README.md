@@ -9,7 +9,7 @@
 
 **jwtiny** validates JWT tokens efficiently in production Rust applications. The validator follows a reusable pattern: configure it once at application startup, then verify tokens with minimal allocations. The validator can be shared across requests, which reduces memory footprint and improves performance.
 
-The library supports RSA (RS256, RS384, RS512) and ECDSA (ES256, ES384, ES512) algorithms with an aws-lc-rs backend, and provides JWKS support for remote key fetching over HTTPS (rustls) with caching. It's been tested with [Axum](examples/axum/), [Poem](examples/poem/), [Rocket](examples/rocket/), and [Warp](examples/warp/).
+The library supports **RSA** (RS256, RS384, RS512) and **ECDSA** (ES256, ES384, ES512) algorithms with an `aws-lc-rs` backend, and provides **JWKS support** for remote key fetching over HTTPS (`rustls`) with caching. It's been tested with [Axum](examples/axum/), [Poem](examples/poem/), [Rocket](examples/rocket/), and [Warp](examples/warp/).
 
 ## Installation
 

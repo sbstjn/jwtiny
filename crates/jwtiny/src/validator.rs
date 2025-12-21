@@ -217,9 +217,6 @@ impl TokenValidator {
         let payload: C = miniserde::json::from_str(&payload_json)
             .map_err(|e| Error::FormatInvalidJson(format!("Failed to parse payload: {e}")))?;
 
-        // Validate claim string lengths to prevent DoS
-        ClaimsValidation::validate_string_lengths(&payload)?;
-
         let algorithm = header.algorithm; // Copy enum (Copy trait)
         Ok((
             header_b64,

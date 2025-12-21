@@ -5,7 +5,7 @@
 
 use crate::claims;
 use crate::error::{Error, Result};
-use crate::limits::{MAX_CLAIM_STRING_LENGTH, MAX_CLOCK_SKEW_SECONDS, MAX_MAX_AGE_SECONDS};
+use crate::limits::{MAX_CLOCK_SKEW_SECONDS, MAX_MAX_AGE_SECONDS};
 use crate::utils::bounds::apply_clock_skew;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -106,39 +106,6 @@ impl ClaimsValidation {
     pub fn no_iat_validation(mut self) -> Self {
         self.validate_iat = false;
         self
-    }
-
-    /// Validate claim string lengths to prevent DoS attacks
-    pub(crate) fn validate_string_lengths(claims: &impl StandardClaims) -> Result<()> {
-        if let Some(iss) = claims.issuer() {
-            Self::validate_claim_string(iss, "iss")?;
-        }
-
-        if let Some(sub) = claims.subject() {
-            Self::validate_claim_string(sub, "sub")?;
-        }
-
-        if let Some(aud) = claims.audience() {
-            Self::validate_claim_string(aud, "aud")?;
-        }
-
-        if let Some(jti) = claims.jwt_id() {
-            Self::validate_claim_string(jti, "jti")?;
-        }
-
-        Ok(())
-    }
-
-    /// Helper to validate a single claim string length
-    fn validate_claim_string(value: &str, claim_name: &str) -> Result<()> {
-        if value.len() > MAX_CLAIM_STRING_LENGTH {
-            return Err(Error::ClaimStringTooLong {
-                claim: claim_name.into(),
-                length: value.len(),
-                max: MAX_CLAIM_STRING_LENGTH,
-            });
-        }
-        Ok(())
     }
 }
 
@@ -335,13 +302,13 @@ mod tests {
     #[test]
     fn test_clock_skew() {
         // Token expired 30 seconds ago, but within 60-second skew
-        let claims = make_claims(Some(now() - 30), None, None);
-        let config = ClaimsValidation::default().clock_skew(60);
+        let claims = make_claims(Some(now() - 2), None, None);
+        let config = ClaimsValidation::default().clock_skew(5);
         assert!(validate_claims(&claims, &config).is_ok());
 
         // Token expired 90 seconds ago, outside 60-second skew
-        let claims = make_claims(Some(now() - 90), None, None);
-        let config = ClaimsValidation::default().clock_skew(60);
+        let claims = make_claims(Some(now() - 10), None, None);
+        let config = ClaimsValidation::default().clock_skew(5);
         assert!(validate_claims(&claims, &config).is_err());
     }
 

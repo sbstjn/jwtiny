@@ -35,9 +35,9 @@ pub(crate) const MAX_DECODED_SIGNATURE_SIZE: usize = 1024;
 /// Base64URL encoding adds ~33% overhead, so 1KB decoded ≈ 1.3KB encoded
 pub(crate) const MAX_SIGNATURE_B64_SIZE: usize = 1536;
 
-// ============================================================================
-// JWK field size limits (P0 - Critical)
-// ============================================================================
+/// Maximum size for RSA modulus (n) in bytes (4096 bytes)
+/// For JWT/JWKS, practical RSA keys are 2048-4096 bits (256-512 bytes modulus)
+pub(crate) const MAX_RSA_MODULUS_SIZE: usize = 4096;
 
 /// Maximum size for Base64URL-encoded RSA modulus (n) field (12KB)
 /// 8192-byte modulus (65536 bits) encodes to ~10.9KB Base64URL

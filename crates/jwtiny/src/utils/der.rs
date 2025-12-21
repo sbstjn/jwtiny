@@ -3,7 +3,10 @@
 //! This module uses the RustCrypto `spki` and `der` crates for standards-compliant
 //! DER encoding. Always uses aws-lc-rs backend format.
 
-use crate::error::{Error, Result};
+use crate::{
+    error::{Error, Result},
+    limits::MAX_RSA_MODULUS_SIZE,
+};
 use der::{Encode, Sequence, asn1::UintRef};
 use spki::{AlgorithmIdentifierOwned, ObjectIdentifier, SubjectPublicKeyInfoOwned};
 

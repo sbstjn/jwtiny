@@ -7,7 +7,7 @@
 
 use crate::error::{Error, Result};
 use crate::jwks::fetch_url;
-use crate::limits::{MAX_DISCOVERY_RESPONSE_SIZE, MAX_JWKS_URI_LENGTH};
+use crate::limits::MAX_DISCOVERY_RESPONSE_SIZE;
 use crate::url::{validate_issuer_url, validate_jwks_uri};
 use miniserde::Deserialize;
 

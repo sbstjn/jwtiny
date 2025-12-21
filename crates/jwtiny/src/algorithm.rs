@@ -180,7 +180,7 @@ impl AlgorithmPolicy {
 
     /// Validate algorithm against policy
     pub(crate) fn validate(&self, algorithm: &AlgorithmType) -> Result<()> {
-        if self.is_allowed(algorithm) {
+        if self.allowed.contains(algorithm) {
             Ok(())
         } else {
             Err(Error::AlgorithmNotAllowed {
@@ -188,11 +188,6 @@ impl AlgorithmPolicy {
                 allowed: self.allowed.iter().map(ToString::to_string).collect(),
             })
         }
-    }
-
-    /// Check if an algorithm is allowed
-    fn is_allowed(&self, algorithm: &AlgorithmType) -> bool {
-        self.allowed.contains(algorithm)
     }
 }
 
